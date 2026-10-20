@@ -1,0 +1,53 @@
+.toast-stack {
+  position: fixed;
+  top: calc(74px + 1rem);
+  right: 1rem;
+  left: auto;
+  z-index: 1090;
+  display: grid;
+  width: min(400px, calc(100vw - 2rem));
+  max-width: none;
+  gap: .75rem;
+  padding: 0;
+  transform: none;
+  pointer-events: none;
+}
+
+.site-toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: .75rem;
+  padding: .9rem 1rem;
+  color: var(--info);
+  background: var(--info-bg);
+  border: 1px solid color-mix(in srgb, var(--info) 22%, transparent);
+  border-left: 4px solid var(--info);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(36,37,31, .16);
+  animation: staywise-toast-in .24s ease-out both;
+  pointer-events: auto;
+}
+
+.site-toast.toast-success { color: var(--success); background: var(--success-bg); border-color: color-mix(in srgb, var(--success) 22%, transparent); border-left-color: var(--success); }
+.site-toast.toast-warning { color: var(--pending); background: var(--pending-bg); border-color: color-mix(in srgb, var(--pending) 22%, transparent); border-left-color: var(--pending); }
+.site-toast.toast-error { color: var(--cancelled); background: var(--cancelled-bg); border-color: color-mix(in srgb, var(--cancelled) 22%, transparent); border-left-color: var(--cancelled); }
+.toast-icon { display: inline-flex; font-size: 1.15rem; line-height: 1.4; }
+.toast-copy { overflow-wrap: anywhere; font-size: .92rem; font-weight: 650; line-height: 1.45; }
+.toast-dismiss { display: inline-grid; width: 30px; height: 30px; margin: -.25rem -.35rem 0 0; padding: 0; place-items: center; color: currentColor; background: transparent; border: 0; border-radius: 8px; opacity: .72; }
+.toast-dismiss:hover { background: rgba(36,37,31, .55); opacity: 1; }
+.toast-dismiss:focus-visible { outline: 3px solid currentColor !important; outline-offset: 2px; }
+.site-toast.toast-leaving { animation: staywise-toast-out .22s ease-in both; }
+
+@keyframes staywise-toast-in { from { opacity: 0; transform: translate3d(18px, -4px, 0); } to { opacity: 1; transform: none; } }
+@keyframes staywise-toast-out { to { opacity: 0; transform: translate3d(18px, 0, 0); } }
+
+@media (max-width: 575px) {
+  .toast-stack { top: calc(66px + .75rem); right: .75rem; width: calc(100vw - 1.5rem); }
+  .site-toast { padding: .8rem .85rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-toast,
+  .site-toast.toast-leaving { animation: none; }
+}

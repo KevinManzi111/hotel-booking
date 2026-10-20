@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block title %}Explore stays · Staywise{% endblock %}{% block content %}
+<section class="page-hero compact"><div class="container"><span class="eyebrow">Curated stays</span><h1>Find your next favourite room</h1><p>Thoughtfully selected spaces for memorable getaways.</p></div></section>
+<section class="section pt-4"><div class="container">
+<form class="filter-bar" method="get"><div class="row g-3 align-items-end">
+  <div class="col-lg-4"><label for="{{ search_form.city.id_for_label }}">Destination</label>{{ search_form.city }}</div>
+  <div class="col-6 col-lg-2"><label for="{{ search_form.check_in.id_for_label }}">Check in</label>{{ search_form.check_in }}</div>
+  <div class="col-6 col-lg-2"><label for="{{ search_form.check_out.id_for_label }}">Check out</label>{{ search_form.check_out }}</div>
+  <div class="col-6 col-lg-2"><label for="{{ search_form.guests.id_for_label }}">Guests</label>{{ search_form.guests }}</div>
+  <div class="col-6 col-lg-2"><button class="btn btn-primary w-100" type="submit">Search</button></div>
+  <div class="col-6 col-lg-2"><label for="{{ search_form.min_price.id_for_label }}">Min price</label>{{ search_form.min_price }}</div>
+  <div class="col-6 col-lg-2"><label for="{{ search_form.max_price.id_for_label }}">Max price</label>{{ search_form.max_price }}</div>
+  <div class="col-lg-8"><fieldset class="amenity-filter"><legend>Amenities</legend>{{ search_form.amenities }}</fieldset></div>
+</div>{% if search_form.errors %}<div class="filter-errors" role="alert">{% for field in search_form %}{% for error in field.errors %}<span><strong>{{ field.label }}:</strong> {{ error }}</span>{% endfor %}{% endfor %}</div>{% endif %}</form>
+<div class="results-meta"><strong>{{ page_obj.paginator.count }}</strong> stays found {% if request.GET %}<a href="{% url 'hotels:room_list' %}">Clear filters</a>{% endif %}</div>
+<div class="row g-4">{% for room in page_obj %}<div class="col-md-6 col-xl-4">{% include 'includes/room_card.html' with room=room %}</div>{% empty %}<div class="col-12"><div class="empty-state"><i class="bi bi-search-heart"></i><h2>No stays match just yet</h2><p>Try a nearby destination or adjust your dates, price, amenities, or guest count.</p><a class="btn btn-mint" href="{% url 'hotels:room_list' %}">Clear search</a></div></div>{% endfor %}</div>{% include 'includes/pagination.html' %}
+</div></section>{% endblock %}

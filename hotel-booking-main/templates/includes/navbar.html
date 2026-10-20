@@ -1,0 +1,24 @@
+<nav class="navbar navbar-expand-lg sticky-top" aria-label="Primary navigation">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'hotels:home' %}"><span class="brand-mark"><i class="bi bi-compass"></i></span>Staywise</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.namespace == 'hotels' and request.resolver_match.url_name != 'home' %} active{% endif %}" {% if request.resolver_match.namespace == 'hotels' and request.resolver_match.url_name != 'home' %}aria-current="page"{% endif %} href="{% url 'hotels:room_list' %}">Explore stays</a></li>
+        {% if user.is_authenticated %}
+          {% if user.is_staff %}<li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'staff_dashboard' %} active{% endif %}" {% if request.resolver_match.url_name == 'staff_dashboard' %}aria-current="page"{% endif %} href="{% url 'accounts:staff_dashboard' %}">Staff</a></li>{% endif %}
+          <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'dashboard' %} active{% endif %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %} href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link{% if request.resolver_match.namespace == 'recommendations' %} active{% endif %}" {% if request.resolver_match.namespace == 'recommendations' %}aria-current="page"{% endif %} href="{% url 'recommendations:list' %}"><i class="bi bi-stars"></i>For you</a></li>
+          <li class="nav-item"><a class="nav-link{% if request.resolver_match.namespace == 'bookings' %} active{% endif %}" {% if request.resolver_match.namespace == 'bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:list' %}">My trips</a></li>
+          <li class="nav-item dropdown">
+            <button class="btn btn-mint dropdown-toggle ms-lg-2" data-bs-toggle="dropdown" aria-expanded="false">{{ user.first_name|default:user.username }}</button>
+            <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="{% url 'recommendations:preferences' %}">Travel preferences</a></li><li><hr class="dropdown-divider"></li><li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item" type="submit">Sign out</button></form></li></ul>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'login' %} active{% endif %}" {% if request.resolver_match.url_name == 'login' %}aria-current="page"{% endif %} href="{% url 'login' %}">Sign in</a></li>
+          <li class="nav-item"><a class="btn btn-primary ms-lg-2" href="{% url 'accounts:signup' %}">Create account</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>

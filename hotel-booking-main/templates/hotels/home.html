@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Staywise · Find your kind of stay{% endblock %}
+{% block content %}
+<section class="editorial-hero"><div class="container">
+  <div class="editorial-hero-grid home-hero-stage">
+    <img class="home-hero-background" src="{% static 'images/hero-hotel.png' %}" alt="" aria-hidden="true">
+    <div class="editorial-hero-copy"><span class="kicker">Travel, considered</span><h1>Find a stay that feels made for you.</h1><p>Beautiful rooms, useful details, and transparent recommendations for a remarkable escape.</p><div class="editorial-hero-meta"><div><strong>{{ featured_hotels|length|stringformat:'02d' }}</strong><span>featured places</span></div><a class="round-action" href="{% url 'hotels:room_list' %}" aria-label="Explore all stays"><i class="bi bi-arrow-up-right"></i></a></div></div>
+  </div>
+  <form class="search-panel editorial-search" action="{% url 'hotels:room_list' %}" method="get"><div class="search-grid"><div><label for="{{ search_form.city.id_for_label }}">Destination</label>{{ search_form.city }}</div><div><label for="{{ search_form.check_in.id_for_label }}">Check in</label>{{ search_form.check_in }}</div><div><label for="{{ search_form.check_out.id_for_label }}">Check out</label>{{ search_form.check_out }}</div><div><label for="{{ search_form.guests.id_for_label }}">Guests</label>{{ search_form.guests }}</div><button class="btn btn-primary search-btn" type="submit"><span>Search stays</span><i class="bi bi-arrow-up-right"></i></button></div></form>
+</div></section>
+
+<section class="section showcase-section"><div class="container">
+  <div class="section-heading editorial-heading"><div><span class="eyebrow">Selected places</span><h2>Rooms worth travelling for.</h2></div><p>Distinctive spaces chosen for comfort, character, and the details that make a stay memorable.</p><a href="{% url 'hotels:room_list' %}" class="round-action" aria-label="Explore all stays"><i class="bi bi-arrow-right"></i></a></div>
+  <div class="row g-4">{% for hotel in featured_hotels %}{% with room=hotel.available_rooms.0 %}{% if room %}<div class="col-md-6 col-xl-4">{% include 'includes/room_card.html' with room=room %}</div>{% endif %}{% endwith %}{% empty %}<div class="col-12"><div class="empty-state"><i class="bi bi-house-heart"></i><h3>Beautiful stays are on their way</h3><p>Available featured rooms will appear here.</p>{% if user.is_staff %}<a class="btn btn-primary" href="{% url 'admin:hotels_room_changelist' %}">Manage rooms</a>{% else %}<a class="btn btn-primary" href="{% url 'hotels:room_list' %}">Explore stays</a>{% endif %}</div></div>{% endfor %}</div>
+</div></section>
+
+<section class="section pt-0"><div class="container"><div class="intelligence-panel"><div class="intelligence-mark"><i class="bi bi-stars"></i><span>Explainable matching</span></div><div><span class="eyebrow">Made personal</span><h2>Your taste, translated into better stays.</h2></div><p>Tell us what matters—from location and budget to room style and amenities. Every recommendation includes a transparent score.</p><a class="btn btn-primary" href="{% url 'recommendations:list' %}">Find my matches <i class="bi bi-arrow-up-right"></i></a></div></div></section>
+
+<section class="section how-it-works editorial-process"><div class="container">
+  <div class="section-heading editorial-heading"><div><span class="eyebrow">Simple by design</span><h2>From idea to check-in.</h2></div><p>Three clear steps with availability, pricing, and matching rules enforced on the server.</p></div>
+  <div class="steps-grid"><article><span>01</span><i class="bi bi-search"></i><h3>Find your fit</h3><p>Search real inventory by destination, dates, guests, price, and amenities.</p></article><article><span>02</span><i class="bi bi-stars"></i><h3>Understand the match</h3><p>See the features and weighted score behind every recommendation.</p></article><article><span>03</span><i class="bi bi-calendar2-check"></i><h3>Book with confidence</h3><p>Availability, capacity, dates, and final pricing are verified before confirmation.</p></article></div>
+</div></section>
+{% endblock %}
