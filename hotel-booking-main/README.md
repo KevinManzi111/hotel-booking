@@ -1,8 +1,9 @@
-# Staywise — Hotel Booking and Explainable Recommendation System
+# Staywise — Hotel Booking and AI Recommendation System
 
-Staywise is a Django final-year project for room discovery, authenticated booking,
-customer and staff dashboards, and deterministic weighted content-based recommendations.
-The recommender is rule-based and explainable; it is not a trained machine-learning model.
+Staywise is a Django hotel booking and discovery platform featuring an intelligent
+**Hybrid AI Recommendation Engine** (TF-IDF semantic vectorization, cosine similarity,
+and multi-criteria feature scoring) and a **Generative AI Travel Concierge** (natural
+language search queries, personalized explanations, and automatic offline fallback).
 
 ## Objectives, features, and roles
 

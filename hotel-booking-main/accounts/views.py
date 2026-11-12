@@ -56,7 +56,7 @@ def dashboard(request):
     upcoming = bookings.exclude(status="cancelled").filter(check_out__gt=today)
     past = bookings.exclude(status="cancelled").filter(check_out__lte=today)
     cancelled = bookings.filter(status="cancelled")
-    context = {"recommendations": recommendations_for(preference)[:3], "upcoming": upcoming, "past": past, "cancelled": cancelled, "preference": preference, "booking_metrics": {"total": bookings.count(), "upcoming": upcoming.count(), "completed": past.count(), "cancelled": cancelled.count()}}
+    context = {"recommendations": recommendations_for(preference, use_ai=True)[:3], "upcoming": upcoming, "past": past, "cancelled": cancelled, "preference": preference, "booking_metrics": {"total": bookings.count(), "upcoming": upcoming.count(), "completed": past.count(), "cancelled": cancelled.count()}}
     return render(request, "accounts/dashboard.html", context)
 
 @login_required

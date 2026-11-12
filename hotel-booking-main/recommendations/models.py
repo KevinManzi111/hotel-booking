@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 from hotels.models import Amenity, Room
 
+
 class UserPreference(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hotel_preferences")
     preferred_city = models.CharField(max_length=100, blank=True)
@@ -14,7 +15,9 @@ class UserPreference(models.Model):
     requested_check_in = models.DateField(null=True, blank=True)
     requested_check_out = models.DateField(null=True, blank=True)
     amenities = models.ManyToManyField(Amenity, blank=True)
+    ai_travel_vibe = models.CharField(max_length=100, blank=True, help_text="AI travel mood or style, e.g. romantic, peaceful, scenic, work")
     updated_at = models.DateTimeField(auto_now=True)
+
     def clean(self):
         errors = {}
         if bool(self.requested_check_in) != bool(self.requested_check_out):
@@ -23,5 +26,25 @@ class UserPreference(models.Model):
             errors["requested_check_out"] = "Check-out must be after check-in."
         if self.requested_check_in and self.requested_check_in < timezone.localdate():
             errors["requested_check_in"] = "Check-in cannot be in the past."
-        if errors: raise ValidationError(errors)
-    def __str__(self): return f"Preferences for {self.user}"
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return f"Preferences for {self.user}"
+
+
+class AIRecommendationQuery(models.Model):
+    """Logs AI Travel Concierge queries for history and evaluation."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name="ai_queries")
+    query_text = models.CharField(max_length=255)
+    parsed_intent = models.JSONField(default=dict, blank=True)
+    result_count = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "AI Recommendation Query"
+        verbose_name_plural = "AI Recommendation Queries"
+
+    def __str__(self):
+        return f"{self.user or 'Guest'}: {self.query_text[:40]}"

@@ -36,11 +36,17 @@ TEMPLATES = [{
 WSGI_APPLICATION = "staywise.wsgi.application"
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Kigali"
 USE_I18N = True
@@ -67,6 +73,20 @@ RECOMMENDATION_WEIGHTS = {
     "room_type": 0.20,
     "amenities": 0.20,
     "capacity": 0.10,
+}
+
+# AI Recommendation & LLM Concierge Configuration
+# Works 100% offline with built-in ML semantic matching & fallback narrative.
+# Automatically connects to Google Gemini or OpenAI when API keys are configured.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+AI_RECOMMENDER_CONFIG = {
+    "engine": "hybrid",  # "hybrid" (ML + Concierge), "ml", or "deterministic"
+    "semantic_weight": 0.35,
+    "budget_weight": 0.25,
+    "amenity_weight": 0.20,
+    "rating_weight": 0.10,
+    "location_weight": 0.10,
 }
 
 if not DEBUG:

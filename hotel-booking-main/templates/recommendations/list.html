@@ -1,7 +1,381 @@
-{% extends 'dashboard_base.html' %}{% block title %}Recommended for you · Staywise{% endblock %}{% block dashboard_title %}For you{% endblock %}{% block dashboard_content %}
-<section class="page-hero compact ai-page"><div class="container"><span class="ai-label"><i class="bi bi-stars"></i> Explainable weighted matching</span><h1>Stays selected around you</h1><p>A deterministic content-based recommender compares your preferences with room attributes. It is not a trained machine-learning model.</p><a class="btn btn-mint" href="{% url 'recommendations:preferences' %}"><i class="bi bi-sliders"></i> Adjust preferences</a></div></section>
-<section class="section pt-4"><div class="container">
-{% if preference.requested_check_in %}<div class="method-note mb-4"><i class="bi bi-calendar-check"></i><div><strong>Availability enforced</strong><p>Only rooms available from {{ preference.requested_check_in }} to {{ preference.requested_check_out }} and suitable for {{ preference.guests }} guest{{ preference.guests|pluralize }} are ranked.</p></div></div>{% endif %}
-<div class="row g-4">{% for item in recommendations %}<div class="col-md-6 col-xl-4"><article class="room-card recommendation-card h-100"><div class="score-ribbon"><i class="bi bi-stars"></i> {{ item.score }}% match</div><a href="{% url 'hotels:room_detail' item.room.pk %}" class="room-card-image-wrap">{% if item.room.display_image %}<img class="room-card-image" src="{{ item.room.display_image }}" alt="{{ item.room.name }}" loading="lazy">{% else %}<div class="room-placeholder"><i class="bi bi-building"></i></div>{% endif %}</a><div class="room-card-body"><span class="eyebrow">{{ item.room.hotel.city }}</span><h2><a href="{% url 'hotels:room_detail' item.room.pk %}">{{ item.room.name }}</a></h2><p class="hotel-name">{{ item.room.hotel.name }}</p><div class="why-match"><strong>Why it matches</strong><ul>{% for reason in item.reasons %}<li><i class="bi bi-check2"></i>{{ reason }}</li>{% endfor %}</ul><details><summary>See score breakdown</summary><div class="score-table">{% for label, detail in item.breakdown.items %}<div><span>{{ label|title }}</span><span>{{ detail.raw }} / 100 × {{ detail.weight }}%</span><strong>+{{ detail.points }}</strong></div>{% endfor %}</div></details></div><div class="card-bottom"><div><span class="price">${{ item.room.price_per_night|floatformat:0 }}</span><span class="text-secondary"> / night</span></div><a class="btn btn-sm btn-primary" href="{% url 'hotels:room_detail' item.room.pk %}">View stay</a></div></div></article></div>{% empty %}<div class="col-12"><div class="empty-state"><i class="bi bi-calendar-x"></i><h2>No eligible rooms found</h2><p>No available room currently satisfies your dates and guest capacity. Change those hard constraints to broaden the results.</p><a class="btn btn-primary" href="{% url 'recommendations:preferences' %}">Update preferences</a></div></div>{% endfor %}</div>
-<aside class="method-note"><i class="bi bi-info-circle"></i><div><strong>How the score works</strong><p>Each feature is normalized from 0 to 1, multiplied by its configured weight, and summed to a percentage. Rooms are sorted by score, then lower nightly price, then database ID for deterministic ties. Budget is a soft preference: full credit at or below budget, tapering to zero at 150% of budget.</p></div></aside>
-</div></section>{% endblock %}
+{% extends 'dashboard_base.html' %}
+{% block title %}AI Recommendations · Staywise{% endblock %}
+{% block dashboard_title %}AI Recommendations{% endblock %}
+
+{% block dashboard_content %}
+<style>
+.ai-search-card {
+  background: linear-gradient(135deg, #f7faf8 0%, #ffffff 100%);
+  border: 1px solid rgba(44, 122, 123, 0.2);
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  margin-bottom: 2rem;
+}
+.ai-search-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.ai-search-input-wrap {
+  position: relative;
+  flex: 1;
+}
+.ai-search-input-wrap i {
+  position: absolute;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2c7a7b;
+  font-size: 1.1rem;
+}
+.ai-search-input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.85rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+.ai-search-input:focus {
+  outline: none;
+  border-color: #2c7a7b;
+  box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.15);
+}
+.ai-prompt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  align-items: center;
+}
+.ai-prompt-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #6c757d;
+  letter-spacing: 0.05em;
+  margin-right: 0.25rem;
+}
+.prompt-chip {
+  background: #ffffff;
+  border: 1px solid #dce4e2;
+  border-radius: 50px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  color: #234e52;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.prompt-chip:hover {
+  background: #e6fffa;
+  border-color: #319795;
+  color: #234e52;
+  transform: translateY(-1px);
+}
+.ai-concierge-panel {
+  background: linear-gradient(135deg, #e6fffa 0%, #edfbf7 100%);
+  border: 1px solid #b2f5ea;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 1.2rem;
+  align-items: flex-start;
+}
+.ai-avatar {
+  background: #319795;
+  color: #ffffff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(49, 151, 149, 0.3);
+}
+.ai-concierge-body h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: #234e52;
+}
+.ai-concierge-body p {
+  font-size: 0.9rem;
+  color: #285e61;
+  margin-bottom: 0.5rem;
+  line-height: 1.45;
+}
+.detected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tag-badge {
+  background: #ffffff;
+  border: 1px solid #b2f5ea;
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #285e61;
+}
+.ai-concierge-note {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #166534;
+  margin: 0.6rem 0;
+  line-height: 1.4;
+}
+.mode-toggle-group {
+  display: inline-flex;
+  border: 1px solid #dce4e2;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.mode-toggle-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.mode-toggle-btn.active {
+  background: #319795;
+  color: #ffffff;
+}
+.engine-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #edf2f7;
+  border-radius: 50px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+.engine-status-pill .pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38a169;
+}
+</style>
+
+<section class="page-hero compact ai-page">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="ai-label"><i class="bi bi-stars"></i> Staywise AI Recommender</span>
+        <div class="engine-status-pill">
+          <span class="pulse-dot"></span>
+          <span>{{ engine_label }}</span>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="mode-toggle-group" role="group" aria-label="Engine Mode">
+          <a href="?mode=ai{% if query %}&q={{ query|urlencode }}{% endif %}" class="mode-toggle-btn {% if mode != 'classic' %}active{% endif %}">
+            <i class="bi bi-cpu"></i> Hybrid AI
+          </a>
+          <a href="?mode=classic" class="mode-toggle-btn {% if mode == 'classic' %}active{% endif %}">
+            <i class="bi bi-sliders"></i> Classic Rules
+          </a>
+        </div>
+        <a class="btn btn-sm btn-mint" href="{% url 'recommendations:preferences' %}">
+          <i class="bi bi-person-gear"></i> Preferences
+        </a>
+      </div>
+    </div>
+    <h1>Personalized stays, powered by AI</h1>
+    <p>Semantic machine-learning similarity, structured preference matching, and intelligent natural language concierge discovery.</p>
+  </div>
+</section>
+
+<section class="section pt-4">
+  <div class="container">
+
+    <!-- Interactive AI Concierge Search Box -->
+    <div class="ai-search-card">
+      <form class="ai-search-form" method="get" action="{% url 'recommendations:list' %}">
+        <input type="hidden" name="mode" value="ai">
+        <div class="ai-search-input-wrap">
+          <i class="bi bi-stars"></i>
+          <input
+            type="text"
+            name="q"
+            id="aiSearchInput"
+            class="ai-search-input"
+            placeholder="Ask AI: Describe your dream stay (e.g. 'Cozy romantic suite in Kigali with pool under $200')..."
+            value="{{ query }}"
+            autocomplete="off"
+          >
+        </div>
+        <button class="btn btn-primary" type="submit">
+          <i class="bi bi-magic"></i> Ask Concierge
+        </button>
+      </form>
+
+      <!-- Suggested Prompts Chips -->
+      <div class="ai-prompt-chips">
+        <span class="ai-prompt-label"><i class="bi bi-lightbulb"></i> Try asking:</span>
+        {% for prompt in suggested_prompts %}
+          <a href="?mode=ai&q={{ prompt|urlencode }}" class="prompt-chip" onclick="document.getElementById('aiSearchInput').value='{{ prompt|escapejs }}';">
+            {{ prompt }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- AI Concierge Insight Narrative -->
+    {% if ai_summary %}
+      <div class="ai-concierge-panel">
+        <div class="ai-avatar">
+          <i class="bi bi-robot"></i>
+        </div>
+        <div class="ai-concierge-body flex-grow-1">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3><i class="bi bi-stars"></i> AI Concierge Travel Analysis</h3>
+            {% if query %}
+              <a href="{% url 'recommendations:list' %}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem;">Clear search</a>
+            {% endif %}
+          </div>
+          <p>{{ ai_summary }}</p>
+
+          <!-- Detected Hints Tags -->
+          {% if ai_hints.city or ai_hints.room_type or ai_hints.max_price or ai_hints.amenities or ai_hints.vibes %}
+            <div class="detected-tags">
+              <span class="text-secondary small me-1">Extracted criteria:</span>
+              {% if ai_hints.city %}<span class="tag-badge"><i class="bi bi-geo-alt"></i> {{ ai_hints.city }}</span>{% endif %}
+              {% if ai_hints.room_type %}<span class="tag-badge"><i class="bi bi-door-open"></i> {{ ai_hints.room_type|title }}</span>{% endif %}
+              {% if ai_hints.max_price %}<span class="tag-badge"><i class="bi bi-cash"></i> Max ${{ ai_hints.max_price|floatformat:0 }}/night</span>{% endif %}
+              {% for vibe in ai_hints.vibes %}
+                <span class="tag-badge"><i class="bi bi-tag"></i> {{ vibe|title }}</span>
+              {% endfor %}
+              {% for amenity in ai_hints.amenities %}
+                <span class="tag-badge"><i class="bi bi-check2"></i> {{ amenity|title }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Date & Capacity Availability Notice -->
+    {% if preference.requested_check_in %}
+      <div class="method-note mb-4">
+        <i class="bi bi-calendar-check"></i>
+        <div>
+          <strong>Availability & Capacity Enforced</strong>
+          <p>Displaying rooms available from {{ preference.requested_check_in }} to {{ preference.requested_check_out }} accommodating at least {{ preference.guests }} guest{{ preference.guests|pluralize }}.</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Recommendation Cards Grid -->
+    <div class="row g-4">
+      {% for item in recommendations %}
+        <div class="col-md-6 col-xl-4">
+          <article class="room-card recommendation-card h-100">
+            <div class="score-ribbon">
+              <i class="bi bi-stars"></i> {{ item.score }}% AI Match
+            </div>
+            <a href="{% url 'hotels:room_detail' item.room.pk %}" class="room-card-image-wrap">
+              {% if item.room.display_image %}
+                <img class="room-card-image" src="{{ item.room.display_image }}" alt="{{ item.room.name }}" loading="lazy">
+              {% else %}
+                <div class="room-placeholder"><i class="bi bi-building"></i></div>
+              {% endif %}
+            </a>
+            <div class="room-card-body">
+              <span class="eyebrow">{{ item.room.hotel.city }} · {{ item.room.get_room_type_display }}</span>
+              <h2><a href="{% url 'hotels:room_detail' item.room.pk %}">{{ item.room.name }}</a></h2>
+              <p class="hotel-name">{{ item.room.hotel.name }} · {{ item.room.hotel.rating }}★</p>
+
+              <!-- Dynamic AI Concierge Note -->
+              {% if item.ai_concierge_note %}
+                <div class="ai-concierge-note">
+                  <i class="bi bi-chat-quote-fill me-1"></i> {{ item.ai_concierge_note }}
+                </div>
+              {% endif %}
+
+              <!-- Why AI Matches -->
+              <div class="why-match">
+                <strong>Why AI recommends this</strong>
+                <ul>
+                  {% for reason in item.reasons %}
+                    <li><i class="bi bi-check2"></i>{{ reason }}</li>
+                  {% endfor %}
+                </ul>
+
+                {% if item.breakdown %}
+                  <details>
+                    <summary>See feature attribution</summary>
+                    <div class="score-table">
+                      {% for label, detail in item.breakdown.items %}
+                        <div>
+                          <span>{{ label|title }}</span>
+                          <span>{{ detail.raw }} / 100 × {{ detail.weight }}%</span>
+                          <strong>+{{ detail.points }}</strong>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% endif %}
+              </div>
+
+              <div class="card-bottom">
+                <div>
+                  <span class="price">${{ item.room.price_per_night|floatformat:0 }}</span>
+                  <span class="text-secondary"> / night</span>
+                </div>
+                <a class="btn btn-sm btn-primary" href="{% url 'hotels:room_detail' item.room.pk %}">View stay</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      {% empty %}
+        <div class="col-12">
+          <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <h2>No eligible rooms found</h2>
+            <p>No available room matches your requested query or date/guest constraints. Try broadening your criteria or updating your preferences.</p>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+              <a class="btn btn-primary" href="{% url 'recommendations:list' %}">Reset AI Search</a>
+              <a class="btn btn-mint" href="{% url 'recommendations:preferences' %}">Update preferences</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Transparent Methodology Note -->
+    <aside class="method-note mt-5">
+      <i class="bi bi-info-circle"></i>
+      <div>
+        <strong>How the Staywise AI Recommendation Engine Works</strong>
+        <p>
+          Our hybrid AI architecture combines TF-IDF document embeddings and cosine similarity with multi-criteria optimization (budget fit, amenity coverage, hotel ratings, and location).
+          Natural language trip queries are analyzed to extract travel intents, and a generative concierge narrative provides personalized explanations.
+          The system runs 100% offline out-of-the-box and dynamically connects to Google Gemini or OpenAI when API keys are configured.
+        </p>
+      </div>
+    </aside>
+
+  </div>
+</section>
+{% endblock %}

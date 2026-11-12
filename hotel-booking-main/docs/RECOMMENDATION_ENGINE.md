@@ -1,108 +1,96 @@
-# Explainable Recommendation Engine
+# Staywise AI Recommendation & Concierge Engine
 
 ## Objective and classification
 
-Staywise ranks rooms against an authenticated customer's saved preferences. It is a **deterministic weighted content-based recommender**, not a trained machine-learning model: there is no training dataset, learned parameter, prediction target, or model fitting step.
+Staywise provides a dual-engine recommendation platform:
 
-Implementation: `recommendations/services.py`. Preferences are stored by `recommendations.models.UserPreference`; rooms, hotels, and amenities come from `hotels.models`.
+1. **Hybrid Machine Learning Recommender (`recommendations/ai_engine.py`)**:
+   - Computes **TF-IDF semantic document representations** over room and hotel features (room names, descriptions, hotel atmosphere, cities, and amenity sets).
+   - Calculates **cosine similarity** between user profile / natural language search vectors and catalog embeddings.
+   - Merges semantic similarity with multi-criteria optimization: price affordability curves, amenity coverage ratio, hotel ratings, and location matches.
+   - Provides transparent **Explainable AI (XAI)** feature attributions (percentage points per component).
 
-## Inputs and hard constraints
+2. **Generative AI Travel Concierge (`recommendations/ai_concierge.py`)**:
+   - Parses freeform natural language trip queries (e.g. *"Cozy romantic suite in Kigali with pool under $200"*).
+   - Extracts structured travel constraints (destinations, room types, price caps, guest counts, requested amenities, travel vibes).
+   - Connects to **Google Gemini** or **OpenAI** when API keys are configured (`GEMINI_API_KEY` / `OPENAI_API_KEY`).
+   - Automatically falls back to an **Intelligent Local NLP generator** that runs 100% offline with zero dependencies or external network calls.
 
-The preference inputs are destination, room type, maximum nightly price, guests, requested dates, and amenities. Before scoring, `eligible_rooms()` retains only rooms that:
+3. **Classic Deterministic Baseline (`recommendations/services.py`)**:
+   - Retained for testing, evaluation comparisons, and backwards compatibility.
 
-1. have `status="available"`;
-2. have `capacity >= guests`; and
-3. have no confirmed booking where `booking.check_in < requested_check_out` and `booking.check_out > requested_check_in`.
+---
 
-Capacity and date availability are therefore eligibility rules, not merely ranking hints. The configured budget is a soft preference: rooms up to 150% of budget can receive a declining score, and rooms further above budget receive zero budget points but can remain eligible.
+## Architecture and Data Flow
 
-## Feature normalization
+```mermaid
+flowchart TD
+    UserQuery["Traveler Request\n(Natural Language Prompt or Preferences)"] --> Concierge["AI Concierge (recommendations/ai_concierge.py)"]
+    Concierge --> IntentParser["NLP Intent & Constraint Parser"]
+    IntentParser --> Filter["Hard Constraints Filter\n(Status = available, Capacity >= guests, Dates free)"]
+    Filter --> DB[(SQLite / Django ORM)]
+    DB --> Candidates["Eligible Rooms"]
+    Candidates --> MLRecommender["Hybrid ML Engine (recommendations/ai_engine.py)"]
+    MLRecommender --> TFIDF["TF-IDF Vectorizer & Cosine Similarity"]
+    MLRecommender --> MultiCriteria["Budget Curve + Amenity Ratio + Hotel Rating"]
+    TFIDF & MultiCriteria --> Ranked["Ranked Rooms + XAI Attribution"]
+    Ranked --> NarrativeGen{"API Key Available?"}
+    NarrativeGen -- Yes --> LLM["Google Gemini / OpenAI API"]
+    NarrativeGen -- No / Timeout --> Offline["Offline Smart NLP Generator"]
+    LLM & Offline --> FinalView["AI Recommendation View & Concierge Cards"]
+```
 
-Every raw feature score is in `[0, 1]`:
+---
 
-| Feature | Normalization |
-| --- | --- |
-| Budget | `1` at or below budget; above budget, `max(0, 1 - (price-budget)/(0.5×budget))`; `0.5` when no budget is supplied. |
-| Location | `1` when the preferred text occurs case-insensitively in hotel city/country; `0` for a specified non-match; `0.5` when unspecified. |
-| Room type | `1` for an exact selected type; `0` for a specified non-match; `0.5` when unspecified. |
-| Amenities | selected amenity IDs offered by room or hotel divided by selected amenity count; `0.5` when none are selected. |
-| Capacity | `min(room.capacity / guests, 1)` after the hard capacity filter. This is normally `1` for eligible rooms. |
+## Machine Learning Normalization & Formula
 
-Missing optional preferences use a neutral score rather than automatically rewarding or excluding a room. Guests default to two and are validated to at least one.
+Every component score $s_i \in [0, 1]$:
 
-## Weights and formula
+| Component | Weight | Normalization Formula / Logic |
+| --- | ---: | --- |
+| **Semantic Similarity** | 35% | Cosine similarity between query TF-IDF vector $\mathbf{q}$ and room document vector $\mathbf{d}$: $\frac{\mathbf{q} \cdot \mathbf{d}}{\|\mathbf{q}\|_2 \|\mathbf{d}\|_2}$ |
+| **Budget Fit** | 25% | `1.0` if `price <= max_price`; linear decay `max(0, 1 - (price - max_price)/(0.5 * max_price))` up to 150% budget |
+| **Amenity Match** | 20% | $|\text{Requested} \cap \text{Offered}| / |\text{Requested}|$ (or `0.7` neutral if unconstrained) |
+| **Hotel Rating** | 10% | $\min(\max(\text{rating} / 5.0, 0), 1.0)$ |
+| **Location Match** | 10% | `1.0` if preferred city in hotel city/country; `0.7` if unconstrained |
 
-The configured values in `staywise/settings.py` are:
+The final percentage score is:
+$$\text{Score} = \min\left(100.0, \max\left(0.0, \sum_i (s_i \times w_i \times 100)\right)\right)$$
 
-| Feature | Weight |
-| --- | ---: |
-| Budget | 30% |
-| Location | 20% |
-| Room type | 20% |
-| Amenities | 20% |
-| Capacity | 10% |
+---
 
-`get_weights()` clamps negative configured values to zero and normalizes the remaining values to sum to one. If the configured total is zero, it returns the default weights.
+## Natural Language Concierge Discovery
 
-For normalized feature scores `s_i` and normalized weights `w_i`:
+Travelers can enter freeform prompts such as:
+- *"Romantic suite with balcony and breakfast under $180"*
+- *"Quiet workspace with high-speed Wi-Fi in Nairobi"*
+- *"Family friendly stay in Zanzibar with pool"*
 
-`final score = round(Σ(round(s_i × w_i × 100, 1)), 1)`
+The Concierge extracts:
+- `city`: Destination detected from known catalog cities.
+- `room_type`: Standard, deluxe, suite, or family.
+- `max_price`: Parsed budget threshold.
+- `guests`: Number of guests or inferred from keywords ("couple", "family", "solo").
+- `amenities`: Fast Wi-Fi, pool, spa, ocean view, breakfast, workspace.
+- `vibes`: Romantic, luxury, quiet, peaceful, scenic, work.
 
-The service retains each raw percentage, weight percentage, and point contribution in `breakdown`. This small per-feature rounding means the implementation formula is the sum of rounded one-decimal contributions.
+---
 
-## Worked example
+## Evaluation Command
 
-Consider an eligible two-person suite priced at `$125`, with a `$100` maximum budget, the requested destination and room type, and two of four selected amenities:
+To evaluate and compare the Hybrid AI Recommender against the classic baseline:
 
-- Budget: price is halfway between `$100` and `$150`, so raw score `0.5`; contribution `0.5 × 0.30 × 100 = 15`.
-- Location: match `1.0`; contribution `20`.
-- Room type: match `1.0`; contribution `20`.
-- Amenities: `2/4 = 0.5`; contribution `10`.
-- Capacity: `min(2/2, 1) = 1`; contribution `10`.
+```bash
+python manage.py evaluate_ai_recommender
+```
 
-Final score: `15 + 20 + 20 + 10 + 10 = 75.0%`.
+This outputs a full JSON report containing:
+- Engine status (Gemini/OpenAI connectivity, offline fallback readiness).
+- Classic baseline catalogue coverage and top-3 profile scores.
+- Hybrid AI engine coverage and semantic scores.
+- Live natural language query tests with extracted intents and concierge notes.
 
-This is a formula demonstration, not a recorded evaluation case.
-
-## Explanations, missing preferences, and ties
-
-`score_room()` generates up to four plain-language reasons for budget, destination, room type, amenities, capacity, and requested-date availability. With all optional preferences empty, it explains that capacity is satisfied and that ranking is consistent by price.
-
-`recommendations_for()` sorts by:
-
-1. score descending;
-2. nightly price ascending; and
-3. room primary key ascending.
-
-This makes ties deterministic. If no room survives the hard constraints, the result is an empty list and the template displays an empty state.
-
-## Evaluation
-
-Run:
-
+For the traditional deterministic benchmark:
 ```bash
 python manage.py evaluate_recommender
 ```
-
-`evaluate_profiles()` reports the top room IDs and scores for each profile plus catalogue coverage: unique rooms returned across all top-k lists divided by available-room count. It does **not** measure relevance, accuracy, precision, recall, click-through rate, or customer satisfaction.
-
-Observed on 2026-10-20 against the current development database:
-
-- profile source: saved preferences;
-- profiles evaluated: `2`;
-- top-three rooms returned per profile: `3`;
-- catalogue coverage: `1.0`;
-- top scores: profile one `[65.0, 45.0, 45.0]`; profile two `[55.0, 55.0, 55.0]`.
-
-These results depend on current local database contents and will change when profiles or rooms change.
-
-## Limitations and improvements
-
-- Exact/case-substring category matching cannot model nuanced similarity.
-- Every selected amenity has equal importance.
-- Capacity contributes little discrimination after being enforced as a hard constraint.
-- The budget rule is soft and permits over-budget rooms.
-- No behavioral history, collaborative signals, diversity control, or learned feedback exists.
-- Coverage is not a relevance evaluation.
-
-Future work should collect consented relevance judgements, define offline relevance metrics, allow amenity importance, measure diversity, test alternative budget policies, and only introduce a trained ranker if a suitable dataset and evaluation protocol exist.
