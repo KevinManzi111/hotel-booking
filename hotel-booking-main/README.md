@@ -1,13 +1,12 @@
-# Staywise — Hotel Booking and AI Recommendation System
+# EasyBooking — Room Booking and Recommendation System for TR5 (Ruyenzi, Rwanda)
 
-Staywise is a Django hotel booking and discovery platform featuring an intelligent
-**Hybrid AI Recommendation Engine** (TF-IDF semantic vectorization, cosine similarity,
-and multi-criteria feature scoring) and a **Generative AI Travel Concierge** (natural
-language search queries, personalized explanations, and automatic offline fallback).
+EasyBooking is a web-based room booking and recommendation platform designed primarily for
+**TR5 Hotel in Ruyenzi, Rwanda**, and adaptable for other small and medium-sized hotels across **Kigali**.
+It features a **content-based recommendation module** calibrated across stated guest preferences (price, bed type, view, breakfast, air conditioning, quietness) as well as an advanced **Hybrid AI & Concierge Assistant**.
 
 ## Objectives, features, and roles
 
-Staywise demonstrates a maintainable hotel-booking workflow in which important rules are
+EasyBooking demonstrates a maintainable hotel-booking workflow in which important rules are
 enforced by Django rather than trusted to the browser. Public visitors can browse and
 filter active rooms. Registered customers can maintain preferences, receive scored and
 explained recommendations, book available rooms, review their history, edit their profile,
@@ -35,7 +34,7 @@ accounts/          authentication, profiles, dashboards, staff metrics
 hotels/            hotel/room/amenity inventory and public discovery
 bookings/          booking rules, forms, ownership, history, cancellation
 recommendations/   preferences, weighted scoring, explanations, evaluation
-staywise/          project settings, root URLs, WSGI entry point
+easybooking/          project settings, root URLs, WSGI entry point
 templates/         base layouts, page templates, and reusable partials
 static/            Mint & Seafoam CSS, JavaScript, and local images
 docs/              architecture, algorithm, testing, changelog, final report
@@ -63,6 +62,31 @@ python manage.py runserver
 Open `http://127.0.0.1:8000/`. Staff can use `/accounts/staff/` and Django Admin at
 `/admin/`. `seed_demo` is idempotent and creates demonstration hotels, rooms, and
 amenities without deleting existing data.
+
+### Opening the site on a phone
+
+Django's development server listens only on `127.0.0.1` by default, which phones cannot
+reach. Bind it to all interfaces and use the computer's Wi-Fi IPv4 address:
+
+```powershell
+.\run_lan.ps1            # applies migrations, prints the phone URL, then runs on 0.0.0.0:8000
+```
+
+The manual equivalent is `python manage.py runserver 0.0.0.0:8000`, followed by
+`ipconfig` to find the IPv4 address of the Wi-Fi adapter. On the phone (same Wi-Fi),
+open `http://<wifi-ipv4>:8000/`, for example `http://10.25.1.176:8000/`.
+
+`DEBUG=True` accepts any host so LAN addresses work without extra configuration;
+production must still set `DJANGO_ALLOWED_HOSTS`. If the phone cannot connect, allow
+TCP 8000 through Windows Defender Firewall from an Administrator PowerShell (or run
+`.\run_lan.ps1 -OpenFirewall`):
+
+```powershell
+New-NetFirewallRule -DisplayName "EasyBooking Django 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Private,Public
+```
+
+Campus and guest Wi-Fi networks commonly isolate clients; in that case connect the
+computer to the phone's mobile hotspot and use the address `ipconfig` reports there.
 
 `migrate` creates missing tables without intentionally deleting populated records. Back up
 important databases before migrations. `seed_demo` uses `get_or_create` and is safe to run
@@ -166,7 +190,7 @@ Each eligible room receives normalized feature scores in `[0, 1]`:
 - amenities: selected amenities matched divided by selected amenities, or neutral 0.5;
 - capacity: `min(room capacity / guests, 1)` after the hard capacity check.
 
-Configured weights in `staywise/settings.py` are budget 30%, destination 20%, room type
+Configured weights in `easybooking/settings.py` are budget 30%, destination 20%, room type
 20%, amenities 20%, and capacity 10%. They are normalized automatically:
 
 `score = 100 × Σ(normalized feature score × normalized configured weight)`

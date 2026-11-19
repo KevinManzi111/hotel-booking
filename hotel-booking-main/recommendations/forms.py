@@ -8,6 +8,11 @@ class PreferenceForm(forms.ModelForm):
         fields = (
             "preferred_city",
             "preferred_room_type",
+            "preferred_bed_type",
+            "preferred_view",
+            "requires_breakfast",
+            "requires_ac",
+            "requires_quiet",
             "max_price",
             "guests",
             "requested_check_in",
@@ -20,6 +25,6 @@ class PreferenceForm(forms.ModelForm):
             "guests": forms.NumberInput(attrs={"min": 1}),
             "requested_check_in": forms.DateInput(attrs={"type": "date"}),
             "requested_check_out": forms.DateInput(attrs={"type": "date"}),
-            "ai_travel_vibe": forms.TextInput(attrs={"placeholder": "e.g. Romantic getaway, quiet workspace, scenic escape"}),
+            "ai_travel_vibe": forms.TextInput(attrs={"placeholder": "e.g. Romantic getaway, quiet workspace, scenic hill view"}),
             "amenities": forms.CheckboxSelectMultiple(),
         }

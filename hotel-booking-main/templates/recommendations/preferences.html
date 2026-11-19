@@ -1,20 +1,74 @@
 {% extends 'dashboard_base.html' %}
-{% block title %}Travel preferences · Staywise{% endblock %}
+{% block title %}Travel preferences · EasyBooking{% endblock %}
 {% block dashboard_title %}Travel preferences{% endblock %}
 {% block dashboard_content %}
-<section class="page-hero compact"><div class="container"><span class="eyebrow">Personalise your journey</span><h1>What makes a stay feel right?</h1><p>Your answers shape our recommendations and guide the Staywise AI Concierge. You can change them anytime.</p></div></section>
-<section class="section pt-4"><div class="container"><form class="content-card preference-form preference-layout" method="post">{% csrf_token %}
-<div class="preference-intro"><span class="ai-label"><i class="bi bi-stars"></i> AI Profile & Preferences</span><h2>Tell us what matters</h2><p>Dates and guest capacity determine eligibility. Your destinations, budget, amenities, and travel vibe train the Hybrid AI scoring engine.</p></div>
-<div class="preference-fields"><div class="preference-grid">
-<div>{% include 'includes/field.html' with field=form.preferred_city %}</div>
-<div>{% include 'includes/field.html' with field=form.preferred_room_type %}</div>
-<div>{% include 'includes/field.html' with field=form.max_price %}</div>
-<div>{% include 'includes/field.html' with field=form.guests %}</div>
-<div>{% include 'includes/field.html' with field=form.requested_check_in %}</div>
-<div>{% include 'includes/field.html' with field=form.requested_check_out %}</div>
-<div style="grid-column: 1 / -1;">{% include 'includes/field.html' with field=form.ai_travel_vibe %}</div>
-</div>
-<div class="amenity-choice"><span class="form-label">Amenities</span>{{ form.amenities }}{% for error in form.amenities.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-<div class="preference-actions"><a class="btn btn-mint" href="{% url 'recommendations:list' %}">Cancel</a><button class="btn btn-primary" type="submit">Save and see my matches</button></div></div>
-</form></div></section>
+<section class="page-hero compact">
+  <div class="container"><span class="eyebrow">Personalise your journey</span>
+    <h1>What makes a stay feel right?</h1>
+    <p>Your answers shape our content-based room recommendations for TR5 and Kigali stays.</p>
+  </div>
+</section>
+<section class="section pt-4">
+  <div class="container">
+    <form class="content-card preference-form preference-layout" method="post">{% csrf_token %}
+      <div class="preference-intro"><span class="ai-label"><i class="bi bi-stars"></i> Guest Profile</span>
+        <h2>Tell us what matters</h2>
+        <p>Our recommender uses content-based filtering across your 6 primary preferences: price, bed type, view,
+          breakfast, AC, and quietness.</p>
+      </div>
+      <div class="preference-fields">
+        <div class="preference-grid">
+          <div>{% include 'includes/field.html' with field=form.preferred_city %}</div>
+          <div>{% include 'includes/field.html' with field=form.preferred_room_type %}</div>
+          <div>{% include 'includes/field.html' with field=form.preferred_bed_type %}</div>
+          <div>{% include 'includes/field.html' with field=form.preferred_view %}</div>
+          <div>{% include 'includes/field.html' with field=form.max_price %}</div>
+          <div>{% include 'includes/field.html' with field=form.guests %}</div>
+          <div>{% include 'includes/field.html' with field=form.requested_check_in %}</div>
+          <div>{% include 'includes/field.html' with field=form.requested_check_out %}</div>
+        </div>
+
+        <div class="mt-4 mb-3 p-3 bg-light rounded-3 border">
+          <label class="form-label fw-bold mb-2"><i class="bi bi-check2-square text-primary"></i> Stated Room
+            Features</label>
+          <div class="d-flex flex-wrap gap-4">
+            <div class="form-check">
+              {{ form.requires_breakfast }}
+              <label class="form-check-label" for="{{ form.requires_breakfast.id_for_label }}">
+                <i class="bi bi-cup-hot me-1 text-primary"></i> Breakfast included
+              </label>
+            </div>
+            <div class="form-check">
+              {{ form.requires_ac }}
+              <label class="form-check-label" for="{{ form.requires_ac.id_for_label }}">
+                <i class="bi bi-snow me-1 text-primary"></i> Air conditioning
+              </label>
+            </div>
+            <div class="form-check">
+              {{ form.requires_quiet }}
+              <label class="form-check-label" for="{{ form.requires_quiet.id_for_label }}">
+                <i class="bi bi-volume-mute me-1 text-primary"></i> Quiet room / Low noise
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          {% include 'includes/field.html' with field=form.ai_travel_vibe %}
+        </div>
+
+        <div class="amenity-choice">
+          <span class="form-label">Additional Amenities</span>
+          {{ form.amenities }}
+          {% for error in form.amenities.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="preference-actions">
+          <a class="btn btn-mint" href="{% url 'recommendations:list' %}">Cancel</a>
+          <button class="btn btn-primary" type="submit">Save and see my matches</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

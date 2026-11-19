@@ -1,8 +1,9 @@
 """
-Recommendation services for Staywise.
+Recommendation services for EasyBooking.
 
-Provides deterministic explainable weighted matching as well as
-the new Hybrid AI & LLM Concierge recommendation system.
+Provides content-based filtering based on Chapters 1-4 thesis criteria:
+price, bed type, view, breakfast, air conditioning, and quietness.
+Also supports the Hybrid AI semantic engine and LLM concierge.
 """
 
 from decimal import Decimal
@@ -12,12 +13,23 @@ from hotels.models import Room
 from .ai_concierge import AIConcierge
 from .ai_engine import HybridRoomRecommender
 
+# Classic baseline weights
 DEFAULT_WEIGHTS = {"budget": .30, "location": .20, "room_type": .20, "amenities": .20, "capacity": .10}
 
+# Stated thesis criteria weights (price, bed type, view, breakfast, AC, quietness) summing to 1.0
+THESIS_WEIGHTS = {
+    "price": 0.25,
+    "bed_type": 0.15,
+    "view": 0.15,
+    "breakfast": 0.15,
+    "air_conditioning": 0.15,
+    "quietness": 0.15,
+}
 
-def get_weights():
-    configured = getattr(settings, "RECOMMENDATION_WEIGHTS", DEFAULT_WEIGHTS)
-    weights = {key: max(float(configured.get(key, 0)), 0) for key in DEFAULT_WEIGHTS}
+
+def get_weights(custom_weights: Optional[Dict[str, float]] = None):
+    configured = custom_weights or getattr(settings, "RECOMMENDATION_WEIGHTS", DEFAULT_WEIGHTS)
+    weights = {key: max(float(configured.get(key, 0)), 0) for key in configured}
     total = sum(weights.values())
     if total <= 0:
         return DEFAULT_WEIGHTS.copy()
@@ -51,7 +63,7 @@ def _budget_score(price, maximum):
     """1 within budget; linear decline to 0 at 150% of budget."""
     if maximum in (None, ""):
         return .5
-    price, maximum = Decimal(price), Decimal(maximum)
+    price, maximum = Decimal(str(price)), Decimal(str(maximum))
     if maximum <= 0:
         return 0.0
     if price <= maximum:
@@ -68,40 +80,100 @@ def is_available(room, check_in=None, check_out=None):
 
 
 def score_room(room, preference, weights=None):
-    weights = weights or get_weights()
+    # Determine weights: if preference sets the 6 thesis criteria and no weights passed, use THESIS_WEIGHTS
+    has_thesis_criteria = any([
+        getattr(preference, "preferred_bed_type", None),
+        getattr(preference, "preferred_view", None),
+        getattr(preference, "requires_breakfast", False),
+        getattr(preference, "requires_ac", False),
+        getattr(preference, "requires_quiet", False),
+    ])
+
+    if weights is None:
+        if has_thesis_criteria:
+            weights = get_weights(THESIS_WEIGHTS)
+        else:
+            weights = get_weights(DEFAULT_WEIGHTS)
+    else:
+        weights = get_weights(weights)
+
     wanted = set(preference.amenities.values_list("id", flat=True)) if hasattr(preference, "amenities") else set()
     offered = set(room.amenities.values_list("id", flat=True)) | set(room.hotel.amenities.values_list("id", flat=True))
     matched = wanted & offered
+
+    pref_bed = getattr(preference, "preferred_bed_type", "")
+    pref_view = getattr(preference, "preferred_view", "")
+    req_bkfst = getattr(preference, "requires_breakfast", False)
+    req_ac = getattr(preference, "requires_ac", False)
+    req_quiet = getattr(preference, "requires_quiet", False)
+
+    # Compute raw normalized scores in [0, 1]
     raw = {
+        # Budget / Price
         "budget": _budget_score(room.price_per_night, getattr(preference, "max_price", None)),
+        "price": _budget_score(room.price_per_night, getattr(preference, "max_price", None)),
+        # Location & room type
         "location": 1.0 if getattr(preference, "preferred_city", "") and preference.preferred_city.casefold() in f"{room.hotel.city} {room.hotel.country}".casefold() else (.5 if not getattr(preference, "preferred_city", "") else 0.0),
         "room_type": 1.0 if getattr(preference, "preferred_room_type", "") and room.room_type == preference.preferred_room_type else (.5 if not getattr(preference, "preferred_room_type", "") else 0.0),
         "amenities": len(matched) / len(wanted) if wanted else .5,
         "capacity": min(1.0, room.capacity / max(getattr(preference, "guests", 1), 1)),
+        # Thesis 6 Criteria
+        "bed_type": 1.0 if (not pref_bed or room.bed_type == pref_bed) else 0.4,
+        "view": 1.0 if (not pref_view or room.view_type == pref_view) else 0.4,
+        "breakfast": 1.0 if (not req_bkfst or room.has_breakfast or room.amenities.filter(name__icontains="breakfast").exists()) else 0.0,
+        "air_conditioning": 1.0 if (not req_ac or room.has_ac or room.amenities.filter(name__icontains="air conditioning").exists()) else 0.0,
+        "quietness": 1.0 if (not req_quiet or room.is_quiet or room.amenities.filter(name__icontains="quiet").exists()) else 0.0,
     }
-    contributions = {key: round(raw[key] * weights[key] * 100, 1) for key in weights}
+
+    contributions = {key: round(raw.get(key, 0.5) * weights[key] * 100, 1) for key in weights}
+
     reasons = []
-    if raw["budget"] == 1:
+    if raw.get("budget", 0) == 1.0:
         reasons.append("Within your nightly budget")
-    elif getattr(preference, "max_price", None) and raw["budget"] > 0:
+    elif getattr(preference, "max_price", None) and raw.get("budget", 0) > 0:
         reasons.append("Slightly above budget, with other strong matches")
-    if raw["location"] == 1:
+
+    if pref_bed and raw.get("bed_type") == 1.0:
+        reasons.append(f"Preferred {room.get_bed_type_display().lower()}")
+    if pref_view and raw.get("view") == 1.0:
+        reasons.append(f"Offers desired {room.get_view_type_display().lower()}")
+    if req_bkfst and raw.get("breakfast") == 1.0:
+        reasons.append("Includes complimentary breakfast")
+    if req_ac and raw.get("air_conditioning") == 1.0:
+        reasons.append("Equipped with air conditioning")
+    if req_quiet and raw.get("quietness") == 1.0:
+        reasons.append("Quiet room / low noise atmosphere")
+
+    if raw.get("location") == 1.0:
         reasons.append(f"In your preferred destination, {room.hotel.city}")
-    if raw["room_type"] == 1:
+    if raw.get("room_type") == 1.0:
         reasons.append(f"Your preferred {room.get_room_type_display().lower()} room type")
     if matched:
         reasons.append(f"Matches {len(matched)} of {len(wanted)} selected amenities")
+
     reasons.append(f"Fits your group of {getattr(preference, 'guests', 2)}")
     if getattr(preference, "requested_check_in", None):
         reasons.append("Available for your requested dates")
-    optional_empty = not any([getattr(preference, "preferred_city", ""), getattr(preference, "preferred_room_type", ""), getattr(preference, "max_price", None), wanted])
+
+    optional_empty = not any([
+        getattr(preference, "preferred_city", ""),
+        getattr(preference, "preferred_room_type", ""),
+        getattr(preference, "max_price", None),
+        pref_bed,
+        pref_view,
+        req_bkfst,
+        req_ac,
+        req_quiet,
+        wanted
+    ])
     if optional_empty:
         reasons = ["Meets your guest capacity", "Ranked consistently by price when preferences are open"]
+
     return {
         "room": room,
         "score": round(sum(contributions.values()), 1),
         "reasons": reasons[:4],
-        "breakdown": {key: {"raw": round(raw[key] * 100), "weight": round(weights[key] * 100), "points": contributions[key]} for key in weights}
+        "breakdown": {key: {"raw": round(raw.get(key, 0.5) * 100), "weight": round(weights[key] * 100), "points": contributions[key]} for key in weights}
     }
 
 

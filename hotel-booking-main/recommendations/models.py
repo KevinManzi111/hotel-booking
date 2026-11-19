@@ -8,8 +8,13 @@ from hotels.models import Amenity, Room
 
 class UserPreference(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hotel_preferences")
-    preferred_city = models.CharField(max_length=100, blank=True)
+    preferred_city = models.CharField(max_length=100, blank=True, default="")
     preferred_room_type = models.CharField(max_length=20, choices=Room.ROOM_TYPES, blank=True)
+    preferred_bed_type = models.CharField(max_length=20, choices=Room.BED_TYPES, blank=True, default="")
+    preferred_view = models.CharField(max_length=20, choices=Room.VIEW_TYPES, blank=True, default="")
+    requires_breakfast = models.BooleanField(default=False, verbose_name="Breakfast included")
+    requires_ac = models.BooleanField(default=False, verbose_name="Air conditioning")
+    requires_quiet = models.BooleanField(default=False, verbose_name="Quiet room / low noise")
     max_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0.01)])
     guests = models.PositiveSmallIntegerField(default=2, validators=[MinValueValidator(1)])
     requested_check_in = models.DateField(null=True, blank=True)

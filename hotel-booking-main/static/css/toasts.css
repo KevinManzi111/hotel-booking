@@ -25,7 +25,7 @@
   border-left: 4px solid var(--info);
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(36,37,31, .16);
-  animation: staywise-toast-in .24s ease-out both;
+  animation: easybooking-toast-in .24s ease-out both;
   pointer-events: auto;
 }
 
@@ -37,10 +37,10 @@
 .toast-dismiss { display: inline-grid; width: 30px; height: 30px; margin: -.25rem -.35rem 0 0; padding: 0; place-items: center; color: currentColor; background: transparent; border: 0; border-radius: 8px; opacity: .72; }
 .toast-dismiss:hover { background: rgba(36,37,31, .55); opacity: 1; }
 .toast-dismiss:focus-visible { outline: 3px solid currentColor !important; outline-offset: 2px; }
-.site-toast.toast-leaving { animation: staywise-toast-out .22s ease-in both; }
+.site-toast.toast-leaving { animation: easybooking-toast-out .22s ease-in both; }
 
-@keyframes staywise-toast-in { from { opacity: 0; transform: translate3d(18px, -4px, 0); } to { opacity: 1; transform: none; } }
-@keyframes staywise-toast-out { to { opacity: 0; transform: translate3d(18px, 0, 0); } }
+@keyframes easybooking-toast-in { from { opacity: 0; transform: translate3d(18px, -4px, 0); } to { opacity: 1; transform: none; } }
+@keyframes easybooking-toast-out { to { opacity: 0; transform: translate3d(18px, 0, 0); } }
 
 @media (max-width: 575px) {
   .toast-stack { top: calc(66px + .75rem); right: .75rem; width: calc(100vw - 1.5rem); }

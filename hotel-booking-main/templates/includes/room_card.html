@@ -3,5 +3,23 @@
     {% if room.display_image %}<img class="room-card-image" src="{{ room.display_image }}" alt="{{ room.name }} at {{ room.hotel.name }}" loading="lazy">{% else %}<div class="room-placeholder"><i class="bi bi-building"></i></div>{% endif %}
     <span class="rating-pill"><i class="bi bi-star-fill"></i> {{ room.hotel.rating }}</span>
   </a>
-  <div class="room-card-body"><div class="eyebrow">{{ room.hotel.city }}, {{ room.hotel.country }}</div><h3><a href="{% url 'hotels:room_detail' room.pk %}">{{ room.name }}</a></h3><p class="hotel-name">{{ room.hotel.name }} · {{ room.identifier }}</p><div class="amenity-row">{% for amenity in room.amenities.all|slice:':3' %}<span><i class="bi {{ amenity.icon }}"></i>{{ amenity.name }}</span>{% empty %}<span><i class="bi bi-people"></i>Up to {{ room.capacity }} guests</span>{% endfor %}</div><div class="card-bottom"><div><span class="price">${{ room.price_per_night|floatformat:0 }}</span><span class="text-secondary"> / night</span></div><a class="btn btn-sm btn-primary" href="{% url 'hotels:room_detail' room.pk %}">View stay</a></div></div>
+  <div class="room-card-body">
+    <div class="eyebrow">{{ room.hotel.city }}, {{ room.hotel.country }} · {{ room.get_room_type_display }}</div>
+    <h3><a href="{% url 'hotels:room_detail' room.pk %}">{{ room.name }}</a></h3>
+    <p class="hotel-name">{{ room.hotel.name }} · {{ room.identifier }}</p>
+    <div class="amenity-row">
+      <span><i class="bi bi-door-open"></i>{{ room.get_bed_type_display }}</span>
+      <span><i class="bi bi-eye"></i>{{ room.get_view_type_display }}</span>
+      {% if room.has_breakfast %}<span><i class="bi bi-cup-hot"></i>Breakfast</span>{% endif %}
+      {% if room.has_ac %}<span><i class="bi bi-snow"></i>AC</span>{% endif %}
+      {% if room.is_quiet %}<span><i class="bi bi-volume-mute"></i>Quiet</span>{% endif %}
+    </div>
+    <div class="card-bottom">
+      <div>
+        <span class="price">${{ room.price_per_night|floatformat:0 }}</span>
+        <span class="text-secondary"> / night</span>
+      </div>
+      <a class="btn btn-sm btn-primary" href="{% url 'hotels:room_detail' room.pk %}">View stay</a>
+    </div>
+  </div>
 </article>

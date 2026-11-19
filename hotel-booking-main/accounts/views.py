@@ -22,7 +22,7 @@ def signup(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
-        messages.success(request, "Welcome to Staywise. Your account is ready.")
+        messages.success(request, "Welcome to EasyBooking. Your account is ready.")
         return redirect("recommendations:preferences")
     return render(request, "accounts/signup.html", {"form": form})
 

@@ -1,8 +1,8 @@
-# Staywise AI Recommendation & Concierge Engine
+# EasyBooking AI Recommendation & Concierge Engine
 
 ## Objective and classification
 
-Staywise provides a dual-engine recommendation platform:
+EasyBooking provides a dual-engine recommendation platform:
 
 1. **Hybrid Machine Learning Recommender (`recommendations/ai_engine.py`)**:
    - Computes **TF-IDF semantic document representations** over room and hotel features (room names, descriptions, hotel atmosphere, cities, and amenity sets).
@@ -16,8 +16,16 @@ Staywise provides a dual-engine recommendation platform:
    - Connects to **Google Gemini** or **OpenAI** when API keys are configured (`GEMINI_API_KEY` / `OPENAI_API_KEY`).
    - Automatically falls back to an **Intelligent Local NLP generator** that runs 100% offline with zero dependencies or external network calls.
 
-3. **Classic Deterministic Baseline (`recommendations/services.py`)**:
-   - Retained for testing, evaluation comparisons, and backwards compatibility.
+3. **Content-Based Filtering (Chapters 1–4 Thesis Specification)**:
+   - Primary focus on **TR5 Hotel in Ruyenzi, Rwanda** and small/medium hotels in Kigali.
+   - Evaluates rooms across 6 stated customer preferences with hand-calibrated weights summing to 1.0:
+     - **Price / Budget** (25%)
+     - **Bed type** (15%): Single, Double, Queen, King, Twin
+     - **View** (15%): Hill / Mountain view, Garden view, City view, Courtyard
+     - **Breakfast included** (15%)
+     - **Air conditioning** (15%)
+     - **Quietness / Low noise** (15%)
+   - Calibrated to consistently achieve the target of **$\ge 80\%$ match for top three rooms**.
 
 ---
 

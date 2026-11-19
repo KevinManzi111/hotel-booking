@@ -28,11 +28,30 @@ class Hotel(models.Model):
 
 class Room(models.Model):
     ROOM_TYPES = [("standard", "Standard"), ("deluxe", "Deluxe"), ("suite", "Suite"), ("family", "Family")]
+    BED_TYPES = [
+        ("single", "Single Bed"),
+        ("double", "Double Bed"),
+        ("queen", "Queen Bed"),
+        ("king", "King Bed"),
+        ("twin", "Twin Beds"),
+    ]
+    VIEW_TYPES = [
+        ("garden", "Garden View"),
+        ("hill", "Hill / Mountain View"),
+        ("city", "City View"),
+        ("courtyard", "Courtyard View"),
+    ]
     STATUS_CHOICES = [("available", "Available"), ("maintenance", "Maintenance"), ("inactive", "Inactive")]
+
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
     identifier = models.CharField(max_length=40, unique=True, default=generate_room_identifier, help_text="Unique room number or inventory code")
     name = models.CharField(max_length=120)
     room_type = models.CharField(max_length=20, choices=ROOM_TYPES)
+    bed_type = models.CharField(max_length=20, choices=BED_TYPES, default="double")
+    view_type = models.CharField(max_length=20, choices=VIEW_TYPES, default="garden")
+    has_breakfast = models.BooleanField(default=True, verbose_name="Breakfast included")
+    has_ac = models.BooleanField(default=True, verbose_name="Air conditioning")
+    is_quiet = models.BooleanField(default=True, verbose_name="Quiet room / low noise")
     description = models.TextField()
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))])
     capacity = models.PositiveSmallIntegerField(default=2, validators=[MinValueValidator(1)])
@@ -42,9 +61,12 @@ class Room(models.Model):
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="available", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     @property
     def active(self): return self.status == "available"
     @property
     def display_image(self): return self.image.url if self.image else self.image_url
     def __str__(self): return f"{self.hotel.name} · {self.name}"
-    class Meta: ordering = ["price_per_night", "name"]; constraints = [models.UniqueConstraint(fields=["hotel", "identifier"], name="unique_hotel_room_identifier")]
+    class Meta:
+        ordering = ["price_per_night", "name"]
+        constraints = [models.UniqueConstraint(fields=["hotel", "identifier"], name="unique_hotel_room_identifier")]

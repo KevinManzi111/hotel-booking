@@ -1,12 +1,12 @@
-# Staywise Architecture
+# EasyBooking Architecture
 
 ## System overview
 
-Staywise is a server-rendered Django application. Django owns authentication, validation, database access, permissions, pricing, availability, and recommendation ranking. Bootstrap 5, project CSS, and vanilla JavaScript enhance the rendered HTML; JavaScript is never the authority for booking or account rules.
+EasyBooking is a server-rendered Django application. Django owns authentication, validation, database access, permissions, pricing, availability, and recommendation ranking. Bootstrap 5, project CSS, and vanilla JavaScript enhance the rendered HTML; JavaScript is never the authority for booking or account rules.
 
 ```mermaid
 flowchart LR
-    Browser[Browser\nDjango templates + CSS + JS] --> URLs[staywise/urls.py]
+    Browser[Browser\nDjango templates + CSS + JS] --> URLs[easybooking/urls.py]
     URLs --> Accounts[accounts]
     URLs --> Hotels[hotels]
     URLs --> Bookings[bookings]
@@ -76,7 +76,7 @@ erDiagram
 
 ## Request-response flow
 
-1. `staywise/urls.py` delegates the request to an application URL configuration.
+1. `easybooking/urls.py` delegates the request to an application URL configuration.
 2. A view constructs a Django form, checks authentication/permissions, and builds an ORM query.
 3. Forms validate user-controlled fields. Models and services enforce business rules that must also hold outside an HTML request.
 4. The ORM reads or writes SQLite.

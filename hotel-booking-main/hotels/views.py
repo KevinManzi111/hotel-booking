@@ -15,6 +15,7 @@ def room_list(request):
     if form.is_valid():
         city, guests = form.cleaned_data.get("city"), form.cleaned_data.get("guests")
         if city: rooms = rooms.filter(Q(hotel__city__icontains=city) | Q(hotel__country__icontains=city))
+        if form.cleaned_data.get("room_type"): rooms = rooms.filter(room_type=form.cleaned_data["room_type"])
         if guests: rooms = rooms.filter(capacity__gte=guests)
         if form.cleaned_data.get("min_price") is not None: rooms = rooms.filter(price_per_night__gte=form.cleaned_data["min_price"])
         if form.cleaned_data.get("max_price") is not None: rooms = rooms.filter(price_per_night__lte=form.cleaned_data["max_price"])

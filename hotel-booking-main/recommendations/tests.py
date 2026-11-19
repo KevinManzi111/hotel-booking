@@ -33,6 +33,44 @@ class RecommendationTests(TestCase):
         self.preference = UserPreference.objects.create(user=self.user, preferred_city="Kigali", preferred_room_type="suite", max_price="150", guests=2)
         self.preference.amenities.add(self.wifi)
 
+    def test_thesis_six_preferences_scoring_achieves_over_80_percent_match(self):
+        # Chapters 1-4: price, bed type, view, breakfast, AC, quietness
+        tr5_hotel = Hotel.objects.create(name="TR5 Hotel", city="Ruyenzi", country="Rwanda", rating="4.8")
+        tr5_room = Room.objects.create(
+            hotel=tr5_hotel,
+            identifier="TR5-DLX-99",
+            name="Deluxe Hill Room",
+            room_type="deluxe",
+            bed_type="double",
+            view_type="hill",
+            has_breakfast=True,
+            has_ac=True,
+            is_quiet=True,
+            price_per_night="45.00",
+            capacity=2
+        )
+        pref_user = User.objects.create_user("tr5guest")
+        pref = UserPreference.objects.create(
+            user=pref_user,
+            preferred_bed_type="double",
+            preferred_view="hill",
+            requires_breakfast=True,
+            requires_ac=True,
+            requires_quiet=True,
+            max_price="50.00",
+            guests=2
+        )
+        result = score_room(tr5_room, pref)
+        self.assertGreaterEqual(result["score"], 80.0)
+        self.assertEqual(result["score"], 100.0)
+        self.assertIn("Within your nightly budget", result["reasons"])
+        self.assertIn("price", result["breakdown"])
+        self.assertIn("bed_type", result["breakdown"])
+        self.assertIn("view", result["breakdown"])
+        self.assertIn("breakfast", result["breakdown"])
+        self.assertIn("air_conditioning", result["breakdown"])
+        self.assertIn("quietness", result["breakdown"])
+
     def test_perfect_match_scores_100_with_explanation_and_breakdown(self):
         result = score_room(self.room, self.preference)
         self.assertEqual(result["score"], 100)

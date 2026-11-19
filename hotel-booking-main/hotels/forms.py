@@ -1,9 +1,10 @@
 from django import forms
 from django.utils import timezone
-from .models import Amenity
+from .models import Amenity, Room
 
 class RoomSearchForm(forms.Form):
-    city = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={"placeholder": "Where would you like to stay?"}))
+    city = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={"placeholder": "Destination (e.g. Ruyenzi, Kigali)"}))
+    room_type = forms.ChoiceField(required=False, choices=[("", "All room types")] + Room.ROOM_TYPES, widget=forms.Select(attrs={"class": "form-select"}))
     check_in = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     check_out = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     guests = forms.IntegerField(required=False, min_value=1, initial=2, widget=forms.NumberInput(attrs={"min": 1}))

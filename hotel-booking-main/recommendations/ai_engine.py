@@ -1,5 +1,5 @@
 """
-Hybrid Machine Learning Recommendation Engine for Staywise.
+Hybrid Machine Learning Recommendation Engine for EasyBooking.
 
 Combines TF-IDF semantic vector representation and cosine similarity with
 multi-criteria feature scoring (budget curve, amenity coverage, hotel ratings,
@@ -153,6 +153,11 @@ class HybridRoomRecommender:
         parts = [
             room.name,
             room.get_room_type_display() if hasattr(room, "get_room_type_display") else room.room_type,
+            room.get_bed_type_display() if hasattr(room, "get_bed_type_display") else getattr(room, "bed_type", ""),
+            room.get_view_type_display() if hasattr(room, "get_view_type_display") else getattr(room, "view_type", ""),
+            "breakfast included" if getattr(room, "has_breakfast", False) else "",
+            "air conditioning" if getattr(room, "has_ac", False) else "",
+            "quiet room low noise" if getattr(room, "is_quiet", False) else "",
             room.description or "",
             room.hotel.name,
             room.hotel.city,
@@ -188,6 +193,16 @@ class HybridRoomRecommender:
                 parts.append(preference.preferred_city)
             if getattr(preference, "preferred_room_type", None):
                 parts.append(preference.preferred_room_type)
+            if getattr(preference, "preferred_bed_type", None):
+                parts.append(preference.get_preferred_bed_type_display() if hasattr(preference, "get_preferred_bed_type_display") else preference.preferred_bed_type)
+            if getattr(preference, "preferred_view", None):
+                parts.append(preference.get_preferred_view_display() if hasattr(preference, "get_preferred_view_display") else preference.preferred_view)
+            if getattr(preference, "requires_breakfast", False):
+                parts.append("breakfast included")
+            if getattr(preference, "requires_ac", False):
+                parts.append("air conditioning")
+            if getattr(preference, "requires_quiet", False):
+                parts.append("quiet room")
             if hasattr(preference, "amenities"):
                 if hasattr(preference.amenities, "all"):
                     parts.extend(a.name for a in preference.amenities.all() if hasattr(a, "name"))

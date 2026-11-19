@@ -1,5 +1,5 @@
 """
-AI Travel Concierge & Natural Language Search for Staywise.
+AI Travel Concierge & Natural Language Search for EasyBooking.
 
 Interprets freeform natural language trip queries, extracts structured
 travel constraints, scores rooms using Hybrid ML, and generates personalized
@@ -50,7 +50,7 @@ def get_known_cities() -> List[str]:
             return [c for c in cities if c]
     except Exception:
         pass
-    return ["Kigali", "Nairobi", "Zanzibar"]
+    return ["Ruyenzi", "Kigali", "Kamonyi"]
 
 
 def get_known_amenities() -> Dict[str, str]:
@@ -63,16 +63,20 @@ def get_known_amenities() -> Dict[str, str]:
         "wifi": "Fast Wi-Fi",
         "wi-fi": "Fast Wi-Fi",
         "internet": "Fast Wi-Fi",
+        "ac": "Air conditioning",
+        "air conditioning": "Air conditioning",
+        "air condition": "Air conditioning",
+        "quiet": "Quiet room",
+        "quiet room": "Quiet room",
+        "low noise": "Quiet room",
+        "hill view": "Hill view",
+        "mountain view": "Hill view",
+        "garden view": "Garden view",
         "pool": "Pool",
         "swimming": "Pool",
         "swimming pool": "Pool",
         "spa": "Spa",
-        "massage": "Spa",
-        "wellness": "Spa",
         "breakfast": "Breakfast",
-        "ocean view": "Ocean view",
-        "beach": "Ocean view",
-        "sea": "Ocean view",
         "workspace": "Workspace",
         "desk": "Workspace",
         "work": "Workspace",
@@ -180,7 +184,7 @@ class AIConcierge:
         ]
 
         system_instruction = (
-            "You are Staywise AI, a sophisticated luxury hotel concierge. "
+            "You are EasyBooking AI, a sophisticated luxury hotel concierge. "
             "Analyze the traveler's request and the available hotel rooms. "
             "Provide a warm, personalized 2-sentence summary and 1-sentence concierge note for each room. "
             "Respond ONLY with a JSON object: {\"summary\": \"...\", \"room_notes\": {\"<id>\": \"note\"}}"
@@ -233,7 +237,7 @@ class AIConcierge:
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are Staywise AI concierge. Return JSON with 'summary' and 'room_notes' dict (room ID to note)."
+                    "content": "You are EasyBooking AI concierge. Return JSON with 'summary' and 'room_notes' dict (room ID to note)."
                 },
                 {
                     "role": "user",

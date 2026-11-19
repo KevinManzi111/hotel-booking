@@ -1,4 +1,4 @@
-/* Staywise visual refresh: warm neutrals carry the interface; forest green is
+/* EasyBooking visual refresh: warm neutrals carry the interface; forest green is
    reserved for brand recognition, primary actions, focus and success states. */
 :root {
   --sw-canvas: #F6F5EF;
@@ -40,6 +40,8 @@ h1, h2, h3, h4, h5, h6 { color: var(--sw-ink); }
 /* Public shell */
 .navbar, .site-navbar { background: rgba(255,255,255,.96); border-color: transparent; box-shadow: 0 1px 0 rgba(36,37,31,.06); }
 .navbar-brand, .footer-brand { color: var(--sw-ink); }
+.brand-mark { align-items: center; display: inline-flex; flex: 0 0 auto; justify-content: center; }
+.easybooking-logo-icon { border-radius: 7px; display: block; flex: 0 0 auto; }
 .nav-link:not(.active) { color: #24251F; }
 .nav-link.active { background: #F6F5EF; color: var(--sw-ink); }
 .site-footer { background: #FFFFFF; border-color: transparent; }
@@ -232,7 +234,7 @@ textarea { background-color: var(--input); border-color: transparent; box-shadow
 }
 
 /* Four-colour contract: every non-photographic UI surface resolves to the
-   approved Staywise palette. Opacity is used only for depth and hierarchy. */
+   approved EasyBooking palette. Opacity is used only for depth and hierarchy. */
 .text-secondary, .hotel-name, .room-meta, .secure-note,
 .page-hero p, .admin-hero p, .editorial-heading > p,
 .sidebar-group, .dashboard-brand small, .sidebar-user small,

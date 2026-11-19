@@ -1,5 +1,5 @@
 {% extends 'dashboard_base.html' %}
-{% block title %}AI Recommendations · Staywise{% endblock %}
+{% block title %}AI Recommendations · EasyBooking{% endblock %}
 {% block dashboard_title %}AI Recommendations{% endblock %}
 
 {% block dashboard_content %}
@@ -181,7 +181,7 @@
   <div class="container">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-2">
       <div class="d-flex align-items-center gap-2">
-        <span class="ai-label"><i class="bi bi-stars"></i> Staywise AI Recommender</span>
+        <span class="ai-label"><i class="bi bi-stars"></i> EasyBooking AI Recommender</span>
         <div class="engine-status-pill">
           <span class="pulse-dot"></span>
           <span>{{ engine_label }}</span>
@@ -249,7 +249,7 @@
         </div>
         <div class="ai-concierge-body flex-grow-1">
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h3><i class="bi bi-stars"></i> AI Concierge Travel Analysis</h3>
+            <h3><i class="bi bi-stars"></i> EasyBooking AI Concierge Travel Analysis</h3>
             {% if query %}
               <a href="{% url 'recommendations:list' %}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem;">Clear search</a>
             {% endif %}
@@ -367,7 +367,7 @@
     <aside class="method-note mt-5">
       <i class="bi bi-info-circle"></i>
       <div>
-        <strong>How the Staywise AI Recommendation Engine Works</strong>
+        <strong>How the EasyBooking Recommendation Engine Works</strong>
         <p>
           Our hybrid AI architecture combines TF-IDF document embeddings and cosine similarity with multi-criteria optimization (budget fit, amenity coverage, hotel ratings, and location).
           Natural language trip queries are analyzed to extract travel intents, and a generative concierge narrative provides personalized explanations.

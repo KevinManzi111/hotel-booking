@@ -11,7 +11,18 @@ if not SECRET_KEY:
         SECRET_KEY = secrets.token_urlsafe(50)
     else:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false.")
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h.strip()]
+# While DEBUG is on, accept any host so the site can also be opened from a
+# phone or another device on the same Wi-Fi via the computer's LAN IP
+# (e.g. http://192.168.1.20:8000/). Production must always provide an explicit
+# DJANGO_ALLOWED_HOSTS list, so this wildcard never applies there.
+_default_allowed_hosts = "localhost,127.0.0.1,testserver"
+if DEBUG:
+    _default_allowed_hosts += ",*"
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", _default_allowed_hosts).split(",")
+    if h.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
@@ -24,7 +35,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware", "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-ROOT_URLCONF = "staywise.urls"
+ROOT_URLCONF = "easybooking.urls"
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
     "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True,
@@ -33,7 +44,7 @@ TEMPLATES = [{
         "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages",
     ]},
 }]
-WSGI_APPLICATION = "staywise.wsgi.application"
+WSGI_APPLICATION = "easybooking.wsgi.application"
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 AUTH_PASSWORD_VALIDATORS = [
     {

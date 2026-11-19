@@ -1,5 +1,12 @@
 {% extends "admin/base.html" %}{% load static %}
-{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Staywise administration{% endblock %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | EasyBooking administration{% endblock %}
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}
-{% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}"><span class="brand-symbol">S</span><span>Staywise <small>Administration</small></span></a></div>{% endblock %}
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}" style="display:inline-flex;align-items:center;gap:0.6rem;">
+    {% include 'includes/easybooking_logo.html' with size='32' %}
+    <span>EasyBooking <small>Administration</small></span>
+  </a>
+</div>
+{% endblock %}
 {% block nav-global %}<a class="view-site-link" href="{% url 'hotels:home' %}">View guest site</a>{% endblock %}

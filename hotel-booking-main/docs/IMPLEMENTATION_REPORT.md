@@ -1,4 +1,4 @@
-# Staywise Final Implementation Report
+# EasyBooking Final Implementation Report
 
 ## Primary-action update — 2026-10-20
 
@@ -55,7 +55,7 @@ Verification performed after the change:
 
 ## 1. Executive summary
 
-Staywise is an implemented Django hotel room discovery, booking, dashboard, and explainable recommendation project. The current build uses real ORM data, authenticated ownership boundaries, server-derived prices, interval availability, and deterministic preference matching. The complete automated suite passes; important desktop and mobile flows have been inspected manually. Limitations remain around SQLite concurrency, external frontend CDNs, production email/deployment, and absence of measured coverage or load testing.
+EasyBooking is an implemented Django hotel room discovery, booking, dashboard, and explainable recommendation project. The current build uses real ORM data, authenticated ownership boundaries, server-derived prices, interval availability, and deterministic preference matching. The complete automated suite passes; important desktop and mobile flows have been inspected manually. Limitations remain around SQLite concurrency, external frontend CDNs, production email/deployment, and absence of measured coverage or load testing.
 
 ## 2. Objectives and requirements
 
@@ -130,7 +130,7 @@ No new notification, SPA, or JavaScript framework was added. Bootstrap, Bootstra
 
 ## 13. Files grouped by feature
 
-- Configuration: `staywise/settings.py`, `staywise/urls.py`, `.env.example`, `.gitignore`, `requirements.txt`.
+- Configuration: `easybooking/settings.py`, `easybooking/urls.py`, `.env.example`, `.gitignore`, `requirements.txt`.
 - Accounts/dashboards: `accounts/forms.py`, `accounts/views.py`, `accounts/services.py`, `accounts/urls.py`, account templates, `dashboard_base.html`.
 - Rooms: `hotels/models.py`, `hotels/forms.py`, `hotels/views.py`, hotel templates, admin, migrations, `seed_demo.py`.
 - Bookings: `bookings/models.py`, `bookings/forms.py`, `bookings/views.py`, booking templates, admin, migrations.

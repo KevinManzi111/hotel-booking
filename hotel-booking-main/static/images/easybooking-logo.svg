@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="EasyBooking logo">
+  <!-- EasyBooking brand tile: deep plum rounded square with the orange "e" monogram -->
+  <rect width="100" height="100" rx="18" fill="#3B1A2C" />
+  <g fill="none" stroke="#F26A1F" stroke-width="14" stroke-linecap="round">
+    <!-- Ring of the "e", open at the lower right -->
+    <path d="M 77 50 A 27 27 0 1 0 67.4 70.7" />
+    <!-- Crossbar escaping the ring on both sides -->
+    <path d="M 23 50 H 80" />
+  </g>
+</svg>
