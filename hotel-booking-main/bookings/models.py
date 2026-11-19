@@ -12,7 +12,7 @@ from hotels.models import Room
 
 class Booking(models.Model):
     STATUS = [("pending", "Pending"), ("confirmed", "Confirmed"), ("cancelled", "Cancelled"), ("completed", "Completed")]
-    reference = models.CharField(max_length=16, unique=True, editable=False, db_index=True, default=generate_booking_reference)
+    reference = models.CharField(max_length=16, unique=True, editable=False, default=generate_booking_reference)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookings")
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="bookings")
     check_in = models.DateField()
