@@ -1,0 +1,452 @@
+/* =====================================================================
+   HOME PAGE STYLES (home.css)
+   Only loaded on the home page (see templates/hotels/home.html).
+   Layout: full-screen video hero -> 3 photo cards overlapping it ->
+   grey search bar with a dark green button.
+
+   Note: refresh.css uses lots of "!important" rules, so a few rules here
+   also need "!important" to win. Each one is marked.
+   ===================================================================== */
+
+
+/* ---------------------------------------------------------------------
+   0. DESIGN TOKENS: change colours and sizes here, in one place.
+   --------------------------------------------------------------------- */
+.page-home {
+  --home-green: #0B4122;          /* deep forest green: main button colour   */
+  --home-green-hover: #0F5A2F;    /* slightly lighter green for hover        */
+  --home-glass: rgba(255,255,255,.22); /* see-through "frosted glass" fill   */
+  --home-glass-border: rgba(255,255,255,.35);
+  --home-panel: #ECEBE6;          /* light grey of the search bar            */
+  --home-radius: 26px;            /* roundness of cards and panels           */
+  --home-font: 'Jost', 'DM Sans', system-ui, sans-serif;
+}
+
+/* Use the Jost font for the new parts of the page. */
+.page-home .vh,
+.page-home .destinations,
+.page-home .home-search,
+.page-home .navbar { font-family: var(--home-font); }
+
+
+/* ---------------------------------------------------------------------
+   1. NAVBAR: see-through over the video, solid white after scrolling.
+   home.js adds the class "is-scrolled" once you scroll past 40px.
+   --------------------------------------------------------------------- */
+.page-home .navbar {
+  position: fixed;                 /* sits on top of the video instead of above it */
+  top: 0; left: 0; right: 0;
+  z-index: 1030;
+  padding: 1.4rem 0;
+  background-color: transparent !important;  /* !important: beats refresh.css */
+  box-shadow: none;
+  border: 0;
+  backdrop-filter: none;
+  transition: background-color .35s ease, padding .35s ease, box-shadow .35s ease;
+}
+
+/* White text and links while the navbar is over the video. */
+.page-home .navbar:not(.is-scrolled) .navbar-brand,
+.page-home .navbar:not(.is-scrolled) .nav-link {
+  color: #FFFFFF !important;
+}
+.page-home .navbar:not(.is-scrolled) .nav-link { font-weight: 400; letter-spacing: .02em; }
+.page-home .navbar:not(.is-scrolled) .nav-link:hover { opacity: .8; }
+.page-home .navbar:not(.is-scrolled) .nav-link.active { background-color: transparent !important; }
+
+/* The "Create account" button becomes an outlined pill, like "Contact us" in the design. */
+.page-home .navbar:not(.is-scrolled) .btn-primary {
+  background: transparent !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  border-radius: 999px;
+  padding: .6rem 1.6rem;
+  box-shadow: none;
+}
+.page-home .navbar:not(.is-scrolled) .btn-primary:hover {
+  background: #FFFFFF !important;
+  color: var(--home-green) !important;
+}
+
+/* The logged-in user's name button: frosted glass instead of solid grey. */
+.page-home .navbar:not(.is-scrolled) .btn-mint {
+  background-color: var(--home-glass) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--home-glass-border) !important;
+}
+
+/* Turn the hamburger icon (mobile menu button) white. */
+.page-home .navbar:not(.is-scrolled) .navbar-toggler { border-color: rgba(255,255,255,.5); }
+.page-home .navbar:not(.is-scrolled) .navbar-toggler-icon { filter: invert(1); }
+
+/* After scrolling: back to a solid white bar with a soft shadow. */
+.page-home .navbar.is-scrolled {
+  background-color: rgba(255,255,255,.97) !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,.08);
+  padding: .75rem 0;
+}
+
+
+/* ---------------------------------------------------------------------
+   2. HERO: the full-screen video section
+   --------------------------------------------------------------------- */
+.vh {
+  position: relative;          /* lets the video, shade and labels be placed inside it */
+  min-height: min(100svh, 980px);  /* fill the screen, but never taller than 980px
+                                      ("svh" handles phone address bars) */
+  display: flex;
+  align-items: center;
+  overflow: hidden;            /* hides any part of the video outside the box */
+  color: #FFFFFF;
+  background: #1d2a1f;         /* dark green shown for a split second before the video loads */
+}
+
+/* The video covers the whole hero, like a background image. */
+.vh-video {
+  position: absolute;
+  inset: 0;                    /* top/right/bottom/left = 0 → fill the parent */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;           /* crop instead of stretching */
+  z-index: 0;
+}
+
+/* Dark gradient on top of the video: darker on the left (behind the headline)
+   and at the top (behind the navbar), clearer in the middle. */
+.vh-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 22%),
+    linear-gradient(90deg, rgba(5,20,10,.72) 0%, rgba(5,20,10,.35) 45%, rgba(5,20,10,.1) 100%);
+}
+
+/* Everything inside the hero sits above the video and the shade. */
+.vh-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;           /* the hero is a flex box, so the container must be told to fill it */
+  height: 100%;
+  padding-top: 7rem;     /* room for the navbar */
+  padding-bottom: 12rem; /* room for the cards that overlap the bottom */
+}
+
+/* Headline + paragraph + button block. */
+.vh-copy { max-width: 860px; }   /* wide enough for "Discover your" on one line */
+.vh-copy h1 {
+  color: #FFFFFF;
+  font-family: var(--home-font);
+  font-weight: 500;
+  font-size: clamp(3rem, 7.5vw, 6.8rem);   /* clamp(min, preferred, max): scales with the screen */
+  line-height: 1.02;
+  letter-spacing: -.02em;
+  margin: 0 0 1.4rem;
+  text-shadow: 0 4px 30px rgba(0,0,0,.25);
+}
+.vh-copy p {
+  font-size: clamp(1.05rem, 1.6vw, 1.45rem);
+  line-height: 1.45;
+  letter-spacing: .02em;
+  max-width: 560px;
+  margin-bottom: 2.4rem;
+  color: #FFFFFF !important;   /* !important: refresh.css forces paragraphs dark */
+  opacity: .95;
+}
+
+/* White pill-shaped "Discover now" button. */
+.vh-btn {
+  display: inline-block;
+  background: #FFFFFF;
+  color: var(--home-green);
+  padding: .95rem 2.8rem;
+  border-radius: 999px;          /* 999px = always perfectly round ends */
+  font-size: 1.1rem;
+  letter-spacing: .03em;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.vh-btn:hover {
+  color: var(--home-green);
+  transform: translateY(-2px);   /* lifts slightly on hover */
+  box-shadow: 0 12px 30px rgba(0,0,0,.25);
+}
+
+
+/* ---------------------------------------------------------------------
+   3. FLOATING GLASS LABELS on top of the video
+   --------------------------------------------------------------------- */
+.vh-pin {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .55rem 1.3rem .55rem .55rem;
+  border-radius: 999px;
+  background: var(--home-glass);
+  border: 1px solid var(--home-glass-border);
+  backdrop-filter: blur(12px);       /* the frosted glass effect: blurs whatever is behind it */
+  -webkit-backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  animation: pin-float 6s ease-in-out infinite;  /* gentle up/down motion, defined below */
+}
+.vh-pin:hover { color: #FFFFFF; background: rgba(255,255,255,.32); }
+
+/* The small dot and line under each label pointing down to a spot in the scene. */
+.vh-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 70px;
+  background: linear-gradient(rgba(255,255,255,.7), rgba(255,255,255,0));
+}
+
+/* Where each label sits (in % so it adapts to the screen size). */
+.vh-pin--top    { top: 30%; right: 10%; }
+.vh-pin--bottom { top: 60%; right: 28%; animation-delay: -3s; } /* out of step with the top one */
+
+.pin-icon {
+  display: grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  font-size: 1.1rem;
+}
+.pin-text { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.pin-text strong { font-weight: 500; font-size: 1.15rem; letter-spacing: .03em; }
+.pin-text u { font-size: .82rem; opacity: .9; }
+
+/* The keyframes for the floating animation: move up 8px and back. */
+@keyframes pin-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+
+/* ---------------------------------------------------------------------
+   4. SOCIAL ICONS (right side) and VIDEO PAUSE BUTTON
+   --------------------------------------------------------------------- */
+.vh-social {
+  position: absolute;
+  right: 1.5rem;
+  top: 58%;
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;   /* stack them vertically */
+  gap: .8rem;
+}
+.vh-social a,
+.vh-video-toggle {
+  display: grid;
+  place-items: center;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--home-glass);
+  border: 1px solid var(--home-glass-border);
+  backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  transition: background .2s ease;
+}
+.vh-social a:hover,
+.vh-video-toggle:hover { background: rgba(255,255,255,.4); color: #FFFFFF; }
+
+.vh-video-toggle {
+  position: absolute;
+  right: 1.5rem;
+  top: calc(58% - 4.2rem);   /* sits just above the social icons */
+  cursor: pointer;
+}
+
+
+/* ---------------------------------------------------------------------
+   5. DESTINATION CARDS: overlap the bottom of the hero
+   --------------------------------------------------------------------- */
+.destinations {
+  position: relative;
+  z-index: 3;
+  margin-top: -10rem;       /* negative margin pulls the cards UP into the hero */
+}
+.destination-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);   /* 3 equal columns */
+  gap: clamp(1rem, 3vw, 2.5rem);
+  padding-inline: clamp(0rem, 5vw, 6rem);  /* narrower than the page, like the design */
+}
+.destination-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;           /* square cards */
+  border-radius: var(--home-radius);
+  overflow: hidden;
+  border: 5px solid rgba(255,255,255,.55);   /* the light frame around each photo */
+  box-shadow: 0 20px 45px rgba(0,0,0,.18);
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+.destination-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .8s ease;
+}
+/* Hover: the card lifts and the photo zooms in slightly. */
+.destination-card:hover { transform: translateY(-6px); box-shadow: 0 28px 55px rgba(0,0,0,.24); }
+.destination-card:hover img { transform: scale(1.06); }
+
+/* The frosted label in the bottom-left corner of each card. */
+.destination-label {
+  position: absolute;
+  left: 1rem; bottom: 1rem;
+  right: 1rem;
+  max-width: max-content;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  padding: .7rem 1.4rem .7rem 1rem;
+  border-radius: 18px;
+  background: rgba(20,30,22,.38);   /* dark glass: keeps white text readable on bright photos */
+  border: 1px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #FFFFFF !important;          /* !important: refresh.css fades some text */
+  font-size: 1.15rem;
+  letter-spacing: .03em;
+  text-shadow: 0 1px 6px rgba(0,0,0,.3);
+}
+.destination-label span {
+  opacity: 1 !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;  /* "..." if the name is too long */
+}
+.destination-label i { font-size: .95rem; }
+
+
+/* ---------------------------------------------------------------------
+   6. SEARCH BAR: grey panel with the green "Get started" button
+   --------------------------------------------------------------------- */
+.home-search {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 3.5rem 0 1rem;
+  padding: 1.6rem 1.6rem 1.6rem 2.2rem;
+  background: var(--home-panel);
+  border-radius: var(--home-radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,.05);
+}
+
+/* One field = round icon + label + input. */
+.home-search-field {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1 1 0;               /* fields share the space equally */
+  min-width: 0;
+  padding-right: 1.5rem;
+  border-right: 1.5px solid #2c2c2c22;   /* the thin divider line between fields */
+}
+.home-search-field--small { flex: .6 1 0; }
+.home-search-field:first-child { flex-grow: 1.35; }   /* Location gets a little extra room */
+.home-search-field:last-of-type { border-right: 0; }
+.home-search-field > div { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+
+/* The round grey circle with the green icon inside. */
+.home-search-icon {
+  flex: 0 0 auto;
+  transition: box-shadow .2s ease;
+  display: grid;
+  place-items: center;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: #DCDBD5;
+  color: var(--home-green);
+  font-size: 1.4rem;
+}
+.home-search label {
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: .03em;
+  color: #1b1b1b;
+}
+/* Inputs look like plain text (no box), as in the design. */
+.home-search input {
+  border: 0 !important;            /* !important: refresh.css gives every input a border */
+  box-shadow: none !important;
+  border-radius: 0;
+  background: transparent !important;
+  padding: 0;
+  min-height: 0;
+  font-family: var(--home-font);
+  font-size: 1.05rem;
+  color: #333;
+  width: 100%;
+  outline: none;
+}
+.home-search input::placeholder { color: #333; }
+/* Keyboard users still need to see which field is selected. */
+.home-search-field:focus-within .home-search-icon { box-shadow: 0 0 0 3px var(--home-green); }
+
+.home-search-btn {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 20px;
+  background: var(--home-green);
+  color: #FFFFFF;
+  font-family: var(--home-font);
+  font-size: 1.2rem;
+  letter-spacing: .04em;
+  padding: 1.25rem 3.5rem;
+  transition: background .2s ease, transform .2s ease;
+}
+.home-search-btn:hover { background: var(--home-green-hover); transform: translateY(-2px); }
+
+
+/* ---------------------------------------------------------------------
+   7. RESPONSIVE: tablets and phones.
+   "@media (max-width: X)" = these rules only apply on screens narrower than X.
+   --------------------------------------------------------------------- */
+
+/* The mobile menu needs a dark background, otherwise white links on the video are hard to read. */
+@media (max-width: 991.98px) {
+  .page-home .navbar:not(.is-scrolled) .navbar-collapse {
+    background: rgba(10,30,18,.85);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: .75rem 1rem;
+    margin-top: .75rem;
+  }
+  .vh-pin--bottom { right: 8%; }
+  .home-search { flex-wrap: wrap; }
+  .home-search-field { flex: 1 1 40%; border-right: 0; padding-right: 0; }
+  .home-search-btn { flex: 1 1 100%; }
+}
+
+@media (max-width: 767.98px) {
+  .vh-inner { padding-bottom: 9rem; }
+  .vh-pin, .vh-social { display: none; }   /* hide floating extras on small screens */
+  .vh-video-toggle { bottom: 10.5rem; left: auto; right: 1rem; }
+  .destinations { margin-top: -7rem; }
+  /* Cards become a sideways-scrolling row instead of squeezing to tiny squares. */
+  .destination-grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 72%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: .5rem;
+  }
+  .destination-card { scroll-snap-align: start; }
+  .home-search { padding: 1.25rem; gap: 1rem; }
+  .home-search-field { flex: 1 1 100%; }
+}
+
+
+/* ---------------------------------------------------------------------
+   8. ACCESSIBILITY: if the visitor has turned on "reduce motion" in their
+   device settings, stop the floating and hover animations.
+   (home.js also pauses the video for these users.)
+   --------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .vh-pin { animation: none; }
+  .destination-card, .destination-card img, .vh-btn { transition: none; }
+}

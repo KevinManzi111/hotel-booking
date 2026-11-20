@@ -7,7 +7,10 @@ from .models import Hotel, Room
 def home(request):
     available_rooms = Room.objects.filter(status="available").select_related("hotel").prefetch_related("amenities")
     hotels = Hotel.objects.filter(featured=True, rooms__status="available").distinct().prefetch_related(Prefetch("rooms", queryset=available_rooms, to_attr="available_rooms"))[:3]
-    return render(request, "hotels/home.html", {"featured_hotels": hotels, "search_form": RoomSearchForm()})
+    search_form = RoomSearchForm()
+    # Shorter placeholder for the home page's compact search bar (only affects this form instance).
+    search_form.fields["city"].widget.attrs["placeholder"] = "Where are you going?"
+    return render(request, "hotels/home.html", {"featured_hotels": hotels, "search_form": search_form})
 
 def room_list(request):
     form = RoomSearchForm(request.GET or None)

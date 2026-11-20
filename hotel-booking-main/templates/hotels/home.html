@@ -1,15 +1,160 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}EasyBooking · Find your stay in Rwanda{% endblock %}
-{% block content %}
-<section class="editorial-hero"><div class="container">
-  <div class="editorial-hero-grid home-hero-stage">
-    <img class="home-hero-background" src="{% static 'images/hero-hotel.png' %}" alt="" aria-hidden="true">
-    <div class="editorial-hero-copy"><span class="kicker">Travel, considered</span><h1>Find a stay that feels made for you.</h1><p>Beautiful rooms, useful details, and transparent recommendations for a remarkable escape.</p><div class="editorial-hero-meta"><div><strong>{{ featured_hotels|length|stringformat:'02d' }}</strong><span>featured places</span></div><a class="round-action" href="{% url 'hotels:room_list' %}" aria-label="Explore all stays"><i class="bi bi-arrow-up-right"></i></a></div></div>
-  </div>
-  <form class="search-panel editorial-search" action="{% url 'hotels:room_list' %}" method="get"><div class="search-grid"><div><label for="{{ search_form.city.id_for_label }}">Destination</label>{{ search_form.city }}</div><div><label for="{{ search_form.check_in.id_for_label }}">Check in</label>{{ search_form.check_in }}</div><div><label for="{{ search_form.check_out.id_for_label }}">Check out</label>{{ search_form.check_out }}</div><div><label for="{{ search_form.guests.id_for_label }}">Guests</label>{{ search_form.guests }}</div><button class="btn btn-primary search-btn" type="submit"><span>Search stays</span><i class="bi bi-arrow-up-right"></i></button></div></form>
-</div></section>
 
+{% block title %}EasyBooking · Find your stay in Rwanda{% endblock %}
+
+{# Adds class="page-home" to <body>. home.css uses it to make the navbar see-through over the video. #}
+{% block body_class %}page-home{% endblock %}
+
+{% block extra_css %}
+  {# Jost: a clean, rounded font that gives the home page its look. #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+  {# All the styles for this page, with comments explaining each part. #}
+  <link href="{% static 'css/home.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+
+{% comment %} ================================================================
+   1. HERO: full-screen background video with the headline on top
+   ================================================================ {% endcomment %}
+<section class="vh" aria-label="Welcome">
+
+  {% comment %} The background video.
+     autoplay + muted + playsinline: browsers only autoplay videos that are muted;
+                                     playsinline stops iPhones from opening it full screen.
+     loop:   starts again when it ends.
+     poster: a still image shown while the video loads (or if it can't play).
+     preload="metadata": loads only basic info first, so the page opens quickly. {% endcomment %}
+  <video class="vh-video" autoplay muted loop playsinline preload="metadata"
+         poster="{% static 'images/hotel-entrance-poster.jpg' %}" aria-hidden="true">
+    <source src="{% static 'videos/hotel-entrance.mp4' %}" type="video/mp4">
+  </video>
+
+  {# A dark gradient over the video so the white text stays readable. #}
+  <div class="vh-shade" aria-hidden="true"></div>
+
+  <div class="vh-inner container">
+    {# Left side: headline, short description and the main button. #}
+    <div class="vh-copy">
+      <h1>Discover your<br>dream stay</h1>
+      <p>Find and book your ideal room in Kigali and Ruyenzi, with honest
+         details, fair prices and recommendations made for you.</p>
+      <a class="vh-btn" href="{% url 'hotels:room_list' %}">Discover now</a>
+    </div>
+
+    {% comment %} Floating glass labels on top of the video.
+       If there are featured hotels in the database we show the first one's real
+       city and name; otherwise we show friendly default text. {% endcomment %}
+    {% with first=featured_hotels.0 %}
+    <a class="vh-pin vh-pin--top" href="{% url 'hotels:room_list' %}{% if first %}?city={{ first.city|urlencode }}{% endif %}">
+      <span class="pin-icon"><i class="bi bi-star"></i></span>
+      <span class="pin-text"><strong>{% if first %}{{ first.city }}{% else %}Kigali, Rwanda{% endif %}</strong><u>read more</u></span>
+    </a>
+    <a class="vh-pin vh-pin--bottom" href="{% if first and first.available_rooms %}{% url 'hotels:room_detail' first.available_rooms.0.pk %}{% else %}{% url 'hotels:room_list' %}{% endif %}">
+      <span class="pin-icon"><i class="bi bi-house"></i></span>
+      <span class="pin-text"><strong>{% if first %}{{ first.name }} {{ first.rating|floatformat:0 }}*{% else %}Our top hotels{% endif %}</strong><u>show hotel</u></span>
+    </a>
+    {% endwith %}
+
+    {# Round social icons down the right side. Replace the "#" links with your real pages. #}
+    <ul class="vh-social" aria-label="Follow us">
+      <li><a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a></li>
+      <li><a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a></li>
+      <li><a href="#" aria-label="Telegram"><i class="bi bi-send"></i></a></li>
+    </ul>
+
+    {% comment %} Pause/play button. A moving background can bother some visitors, so they
+       can stop it. home.js handles the click. {% endcomment %}
+    <button class="vh-video-toggle" type="button" aria-label="Pause background video" data-video-toggle>
+      <i class="bi bi-pause-fill"></i>
+    </button>
+  </div>
+</section>
+
+{% comment %} ================================================================
+   2. DESTINATION CARDS: three photo cards that overlap the bottom of the hero
+   ================================================================ {% endcomment %}
+<section class="destinations container" aria-label="Featured destinations">
+  <div class="destination-grid">
+    {# One card per featured hotel (the view sends up to 3). #}
+    {% for hotel in featured_hotels %}
+      {% with room=hotel.available_rooms.0 %}
+      <a class="destination-card" href="{% if room %}{% url 'hotels:room_detail' room.pk %}{% else %}{% url 'hotels:room_list' %}{% endif %}">
+        {# Use the room photo, then the hotel photo, then a built-in image if neither exists. #}
+        <img src="{% if room.display_image %}{{ room.display_image }}{% elif hotel.image_url %}{{ hotel.image_url }}{% else %}{% static 'images/hero-hotel.png' %}{% endif %}"
+             alt="{{ hotel.name }} in {{ hotel.city }}" loading="lazy">
+        {# The frosted label in the bottom-left corner of the card. #}
+        <span class="destination-label">
+          <span><i class="bi bi-geo-alt"></i> {{ hotel.city }}</span>
+          <span><i class="bi bi-house"></i> {{ hotel.name }}</span>
+        </span>
+      </a>
+      {% endwith %}
+    {% empty %}
+      {% comment %} If the database has no featured hotels yet, show 3 placeholder cards
+         so the design still looks complete. {% endcomment %}
+      <a class="destination-card" href="{% url 'hotels:room_list' %}?city=Kigali">
+        <img src="{% static 'images/hero-hotel.png' %}" alt="Hotel in Kigali" loading="lazy">
+        <span class="destination-label"><span><i class="bi bi-geo-alt"></i> Kigali</span><span><i class="bi bi-house"></i> City stays</span></span>
+      </a>
+      <a class="destination-card" href="{% url 'hotels:room_list' %}?city=Ruyenzi">
+        <img src="{% static 'images/auth-hotel-courtyard.jpg' %}" alt="Hotel courtyard in Ruyenzi" loading="lazy">
+        <span class="destination-label"><span><i class="bi bi-geo-alt"></i> Ruyenzi</span><span><i class="bi bi-house"></i> Garden villas</span></span>
+      </a>
+      <a class="destination-card" href="{% url 'hotels:room_list' %}">
+        <img src="{% static 'images/hotel-entrance-poster.jpg' %}" alt="Palm-lined hotel entrance" loading="lazy">
+        <span class="destination-label"><span><i class="bi bi-geo-alt"></i> Rwanda</span><span><i class="bi bi-house"></i> All stays</span></span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% comment %} ================================================================
+   3. SEARCH BAR: grey rounded panel with a dark green "Get started" button.
+   It sends the same fields (city, check_in, check_out, guests) the room
+   search page expects, so searching works exactly as before.
+   ================================================================ {% endcomment %}
+<section class="container">
+  <form class="home-search" action="{% url 'hotels:room_list' %}" method="get">
+    <div class="home-search-field">
+      <span class="home-search-icon"><i class="bi bi-geo-alt"></i></span>
+      <div>
+        <label for="{{ search_form.city.id_for_label }}">Location</label>
+        {{ search_form.city }}
+      </div>
+    </div>
+    <div class="home-search-field">
+      <span class="home-search-icon"><i class="bi bi-calendar3"></i></span>
+      <div>
+        <label for="{{ search_form.check_in.id_for_label }}">Check in</label>
+        {{ search_form.check_in }}
+      </div>
+    </div>
+    <div class="home-search-field">
+      <span class="home-search-icon"><i class="bi bi-calendar-check"></i></span>
+      <div>
+        <label for="{{ search_form.check_out.id_for_label }}">Check out</label>
+        {{ search_form.check_out }}
+      </div>
+    </div>
+    <div class="home-search-field home-search-field--small">
+      <span class="home-search-icon"><i class="bi bi-people"></i></span>
+      <div>
+        <label for="{{ search_form.guests.id_for_label }}">Guests</label>
+        {{ search_form.guests }}
+      </div>
+    </div>
+    <button class="home-search-btn" type="submit">Get started</button>
+  </form>
+</section>
+
+{% comment %} ================================================================
+   4. THE REST OF THE PAGE: room cards, recommendations, how it works
+   (same content as before)
+   ================================================================ {% endcomment %}
 <section class="section showcase-section"><div class="container">
   <div class="section-heading editorial-heading"><div><span class="eyebrow">Selected places</span><h2>Rooms worth travelling for.</h2></div><p>Distinctive spaces chosen for comfort, character, and the details that make a stay memorable.</p><a href="{% url 'hotels:room_list' %}" class="round-action" aria-label="Explore all stays"><i class="bi bi-arrow-right"></i></a></div>
   <div class="row g-4">{% for hotel in featured_hotels %}{% with room=hotel.available_rooms.0 %}{% if room %}<div class="col-md-6 col-xl-4">{% include 'includes/room_card.html' with room=room %}</div>{% endif %}{% endwith %}{% empty %}<div class="col-12"><div class="empty-state"><i class="bi bi-house-heart"></i><h3>Beautiful stays are on their way</h3><p>Available featured rooms will appear here.</p>{% if user.is_staff %}<a class="btn btn-primary" href="{% url 'admin:hotels_room_changelist' %}">Manage rooms</a>{% else %}<a class="btn btn-primary" href="{% url 'hotels:room_list' %}">Explore stays</a>{% endif %}</div></div>{% endfor %}</div>
@@ -21,4 +166,9 @@
   <div class="section-heading editorial-heading"><div><span class="eyebrow">Simple by design</span><h2>From idea to check-in.</h2></div><p>Three clear steps with availability, pricing, and matching rules enforced on the server.</p></div>
   <div class="steps-grid"><article><span>01</span><i class="bi bi-search"></i><h3>Find your fit</h3><p>Search real inventory by destination, dates, guests, price, and amenities.</p></article><article><span>02</span><i class="bi bi-stars"></i><h3>Understand the match</h3><p>See the features and weighted score behind every recommendation.</p></article><article><span>03</span><i class="bi bi-calendar2-check"></i><h3>Book with confidence</h3><p>Availability, capacity, dates, and final pricing are verified before confirmation.</p></article></div>
 </div></section>
+{% endblock %}
+
+{% block extra_js %}
+  {# Small script for the navbar-on-scroll effect and the video pause button. #}
+  <script src="{% static 'js/home.js' %}"></script>
 {% endblock %}

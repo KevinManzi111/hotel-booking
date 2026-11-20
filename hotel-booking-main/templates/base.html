@@ -15,7 +15,9 @@
   <link href="{% static 'css/refresh.css' %}" rel="stylesheet">
   {% block extra_css %}{% endblock %}
 </head>
-<body>
+<!-- body_class lets a single page add its own class (e.g. "page-home") so its
+     styles can target only that page without affecting the rest of the site. -->
+<body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main-content">Skip to content</a>
   {% block site_nav %}{% include 'includes/navbar.html' %}{% endblock %}
   {% include 'includes/messages.html' %}
