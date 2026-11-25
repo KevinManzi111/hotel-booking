@@ -29,10 +29,20 @@ class Booking(models.Model):
     @property
     def can_cancel(self): return self.status in {"pending", "confirmed"} and self.check_in > timezone.localdate()
 
+    def _dates_changed(self):
+        # True for a new booking, or when check-in/check-out differ from the saved row
+        if self._state.adding or not self.pk: return True
+        saved = Booking.objects.filter(pk=self.pk).values("check_in", "check_out").first()
+        return not saved or saved["check_in"] != self.check_in or saved["check_out"] != self.check_out
+
     def clean(self):
         errors = {}
         if self.check_in and self.check_out and self.check_out <= self.check_in: errors["check_out"] = "Check-out must be after check-in."
-        if self.check_in and self.check_in < timezone.localdate(): errors["check_in"] = "Check-in cannot be in the past."
+        # No past check-in for a new booking, or when the dates are moved. An existing
+        # stay that has already started can still be updated (e.g. staff marking it
+        # "completed" in the admin) as long as its dates stay the same.
+        if self.check_in and self.check_in < timezone.localdate() and self._dates_changed():
+            errors["check_in"] = "Check-in cannot be in the past."
         if self.room_id and self.guests > self.room.capacity: errors["guests"] = f"This room accommodates up to {self.room.capacity} guests."
         if self.room_id and self.check_in and self.check_out and self.status == "confirmed":
             overlap = Booking.objects.filter(room=self.room, status="confirmed", check_in__lt=self.check_out, check_out__gt=self.check_in).exclude(pk=self.pk).exists()

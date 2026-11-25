@@ -1,4 +1,5 @@
 from django import forms
+from bookings.forms import set_date_limits
 from .models import UserPreference
 
 
@@ -28,3 +29,8 @@ class PreferenceForm(forms.ModelForm):
             "ai_travel_vibe": forms.TextInput(attrs={"placeholder": "e.g. Romantic getaway, quiet workspace, scenic hill view"}),
             "amenities": forms.CheckboxSelectMultiple(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # No past dates in the stay-date calendars (recalculated on every request)
+        set_date_limits(self, "requested_check_in", "requested_check_out")

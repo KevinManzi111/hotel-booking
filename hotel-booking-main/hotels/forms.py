@@ -1,5 +1,6 @@
 from django import forms
 from django.utils import timezone
+from bookings.forms import set_date_limits
 from .models import Amenity, Room
 
 class RoomSearchForm(forms.Form):
@@ -11,6 +12,10 @@ class RoomSearchForm(forms.Form):
     min_price = forms.DecimalField(required=False, min_value=0, widget=forms.NumberInput(attrs={"min": 0, "step": "1", "placeholder": "Min"}))
     max_price = forms.DecimalField(required=False, min_value=0, widget=forms.NumberInput(attrs={"min": 0, "step": "1", "placeholder": "Max"}))
     amenities = forms.ModelMultipleChoiceField(required=False, queryset=Amenity.objects.all(), widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_date_limits(self, "check_in", "check_out")   # no past dates in the calendars
 
     def clean(self):
         data = super().clean()
